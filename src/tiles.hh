@@ -39,10 +39,10 @@ typedef struct _tile_t{
 	double	height_deg;
 	int		ppdx;
 	int		ppdy;
-} tile_t, *ptile_t;
+} tile_t;
 
-int tile_load_lidar(tile_t*, char *);
+int tile_load_lidar(tile_t *, const char *);
 int tile_rescale(tile_t *, float);
 void tile_destroy(tile_t *);
 
-#endif
+#endif  // _TILES_HH_

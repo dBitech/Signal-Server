@@ -1,7 +1,7 @@
 #ifndef _LOS_HH_
 #define _LOS_HH_
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "../common.h"
 

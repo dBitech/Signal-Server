@@ -1,9 +1,12 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <math.h>
 #include "tiles.hh"
+
+#include <algorithm>
+#include <cstdlib>
+#include <cstdio>
+#include <cerrno>
+#include <cstring>
+#include <cmath>
+
 #include "common.h"
 
 #define MAX_LINE 50000
@@ -22,7 +25,8 @@ double haversine_formula(double th1, double ph1, double th2, double ph2)
 	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R;
 }
 
-int tile_load_lidar(tile_t *tile, char *filename){
+int tile_load_lidar(tile_t *tile, const char *filename)
+{
 	FILE *fd;
 	char line[MAX_LINE];
 	short nextval;
@@ -32,19 +36,19 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	memset(tile, 0x00, sizeof(tile_t));
 
 	/* Open the file handle and return on error */
-	if ( (fd = fopen(filename,"r")) == NULL )
+	if ( (fd = fopen(filename,"r")) == nullptr )
 		return errno;
 
 	/* This is where we read the header data */
 	/* The string is split for readability but is parsed as a block */
-	if( fscanf(fd,"%*s %d\n" "%*s %d\n" "%*s %lf\n" "%*s %lf\n" "%*s %lf\n" "%*s %d\n",&tile->width,&tile->height,&tile->xll,&tile->yll,&tile->cellsize,(int *)&tile->nodata) != 6 ){
+	if ( fscanf(fd,"%*s %d\n" "%*s %d\n" "%*s %lf\n" "%*s %lf\n" "%*s %lf\n" "%*s %d\n",&tile->width,&tile->height,&tile->xll,&tile->yll,&tile->cellsize,(int *)&tile->nodata) != 6 ) {
 		fclose(fd);
 		return -1;
 	}
 
 	tile->datastart = ftell(fd);
 
-	if(debug){
+	if (debug) {
 		fprintf(stderr,"w:%d h:%d s:%lf\n", tile->width, tile->height, tile->cellsize);
 		fflush(stderr);
 	}
@@ -61,8 +65,8 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	if (tile->xll < westoffset)
 		westoffset = tile->xll;
 
-	 if (debug)
-	 	fprintf(stderr,"%d, %d, %.7f, %.7f, %.7f, %.7f, %.7f\n",tile->width,tile->height,tile->xll,tile->yll,tile->cellsize,tile->yur,tile->xur);
+    if (debug)
+        fprintf(stderr,"%d, %d, %.7f, %.7f, %.7f, %.7f, %.7f\n",tile->width,tile->height,tile->xll,tile->yll,tile->cellsize,tile->yur,tile->xur);
 
 	// Greenwich straddling hack
 	/* if (tile->xll <= 0 && tile->xur > 0) {
@@ -86,7 +90,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 
 	/* Read the actual tile data */
 	/* Allocate the array for the lidar data */
-	if ( (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short))) == NULL ) {
+	if ( (tile->data = (short*) calloc(tile->width * tile->height, sizeof(short))) == nullptr ) {
 		fclose(fd);
 		free(tile->filename);
 		return ENOMEM;
@@ -94,9 +98,9 @@ int tile_load_lidar(tile_t *tile, char *filename){
 
 	size_t loaded = 0;
 	for (size_t h = 0; h < (unsigned)tile->height; h++) {
-		if (fgets(line, MAX_LINE, fd) != NULL) {
+		if (fgets(line, MAX_LINE, fd) != nullptr) {
 			pch = strtok(line, " "); // split line into values
-			for (size_t w = 0; w < (unsigned)tile->width && pch != NULL; w++) {
+			for (size_t w = 0; w < (unsigned)tile->width && pch != nullptr; w++) {
 				/* If the data is less than a *magic* minimum, normalize it to zero */
 				nextval = atoi(pch);
 				if (nextval <= 0)
@@ -107,7 +111,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 					tile->max_el = nextval;
 				if ( nextval < tile->min_el )
 					tile->min_el = nextval;
-				pch = strtok(NULL, " ");
+				pch = strtok(nullptr, " ");
 			}//while
 		} else {
 			fprintf(stderr, "LIDAR error @ h %zu file %s\n", h, filename);
@@ -115,7 +119,7 @@ int tile_load_lidar(tile_t *tile, char *filename){
 	}
 
 	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
-	tile->precise_resolution = (current_res_km/MAX(tile->width,tile->height)*1000);
+	tile->precise_resolution = (current_res_km/std::max(tile->width,tile->height)*1000);
 
 	// Round to nearest 0.5
 	tile->resolution = tile->precise_resolution < 0.5f ? 0.5f : ceil((tile->precise_resolution * 2)+0.5) / 2;
@@ -158,7 +162,7 @@ int tile_rescale(tile_t *tile, float scale){
 	size_t new_width = tile->width * scale;
 
 	/* Allocate the array for the lidar data */
-	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == NULL ) {
+	if ( (new_data = (short*) calloc(new_height * new_width, sizeof(short))) == nullptr ) {
 		return ENOMEM;
 	}
 
@@ -221,26 +225,11 @@ int tile_rescale(tile_t *tile, float scale){
 }
 
 /*
- * tile_resize
- * This function works in conjuntion with resample_data. It takes a
- * resolution value in meters as its argument. It then calculates the
- * nearest (via averaging) resample value and calls resample_data
- */
-int tile_resize(tile_t* tile, int resolution){
-	double current_res_km = haversine_formula(tile->max_north, tile->max_west, tile->max_north, tile->min_west);
-	int current_res = (int) ceil((current_res_km/IPPD)*1000);
-	float scaling_factor = resolution / current_res;
-	if (debug)
-		fprintf(stderr, "Resampling: Current %dm Desired %dm Scale %.1f\n", current_res, resolution, scaling_factor);
-	return tile_rescale(tile, scaling_factor);
-}
-
-/*
  * tile_destroy
  * This function simply destroys any data associated with a tile
  */
 void tile_destroy(tile_t* tile){
-	if (tile->data != NULL)
+	if (tile->data != nullptr)
 		free(tile->data);
 }
 

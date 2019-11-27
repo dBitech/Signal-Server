@@ -23,8 +23,6 @@
 #define	FEET_PER_MILE	5280.0
 #define FOUR_THIRDS	1.3333333333333
 
-#define MAX(x,y)((x)>(y)?(x):(y))
-
 struct dem {
 	float min_north;
 	float max_north;
@@ -82,12 +80,10 @@ extern double max_north;
 extern double min_west;
 extern double max_west;
 extern int ippd;
-extern int MAXRAD;
 extern int mpi;
 extern int max_elevation;
 extern int min_elevation;
 extern int contour_threshold;
-extern int loops;
 extern int jgets;
 extern int width;
 extern int height;
@@ -95,7 +91,7 @@ extern int height;
 extern double earthradius;
 extern double north;
 extern double east;
-extern double south;
+extern double south;  // Never used.
 extern double west;
 extern double max_range;
 extern double dpp;
@@ -113,7 +109,6 @@ extern double delta;
 extern double cropLat;
 extern double cropLon;
 
-extern char string[];
 extern char sdf_path[];
 extern char gpsav;
 

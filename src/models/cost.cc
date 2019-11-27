@@ -12,9 +12,7 @@
 *  for more details.							     *
 *									     */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 double COST231pathLoss(float f, float TxH, float RxH, float d, int mode)
 {
@@ -34,7 +32,7 @@ http://morse.colorado.edu/~tlen5510/text/classwebch3.html
 	}
 */
 	int C = 3;		// 3dB for Urban
-	float lRxH = log10(11.75 * RxH);
+	float lRxH = std::log10(11.75 * RxH);
 	float C_H = 3.2 * (lRxH * lRxH) - 4.97;	// Large city (conservative)
 	float c0 = 69.55;
 	float cf = 26.16;
@@ -44,18 +42,18 @@ http://morse.colorado.edu/~tlen5510/text/classwebch3.html
 	}
 	if (mode == 2) {
 		C = 0;		// Medium city (average)
-		lRxH = log10(1.54 * RxH);
+		lRxH = std::log10(1.54 * RxH);
 		C_H = 8.29 * (lRxH * lRxH) - 1.1;
 	}
 	if (mode == 3) {
 		C = -3;		// Small city (Optimistic)
-		C_H = (1.1 * log10(f) - 0.7) * RxH - (1.56 * log10(f)) + 0.8;
+		C_H = (1.1 * std::log10(f) - 0.7) * RxH - (1.56 * std::log10(f)) + 0.8;
 	}
-	float logf = log10(f);
+	float logf = std::log10(f);
 	double dbloss =
-	    c0 + (cf * logf) - (13.82 * log10(TxH)) - C_H + (44.9 -
+	    c0 + (cf * logf) - (13.82 * std::log10(TxH)) - C_H + (44.9 -
 							     6.55 *
-							     log10(TxH)) *
-	    log10(d) + C;
+							     std::log10(TxH)) *
+	    std::log10(d) + C;
 	return dbloss;
 }

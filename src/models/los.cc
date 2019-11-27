@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 #include <sys/queue.h>
 #include <unistd.h>
 #include "../main.hh"
@@ -28,21 +27,22 @@ struct entry {
 };
 
 namespace {
-	pthread_t threads[64];
-	unsigned int thread_count = 0;
-	pthread_mutex_t maskMutex, queueMutex;
-	bool ***processed;
-	bool has_init_processed = false;
 
-	struct propagationRange {
-		double min_west, max_west, min_north, max_north;
-		double altitude;
-		bool eastwest, los, use_threads;
-		site source;
-		unsigned char mask_value;
-		FILE *fd;
-		int propmodel, knifeedge, pmenv;
-	};
+pthread_t threads[64];
+unsigned int thread_count = 0;
+pthread_mutex_t maskMutex, queueMutex;
+bool ***processed;
+bool has_init_processed = false;
+
+struct propagationRange {
+    double min_west, max_west, min_north, max_north;
+    double altitude;
+    bool eastwest, los, use_threads;
+    site source;
+    unsigned char mask_value;
+    FILE *fd;
+    int propmodel, knifeedge, pmenv;
+};
 
 void addToQueue(int x, int y)
 	{
@@ -57,7 +57,7 @@ void addToQueue(int x, int y)
 
 	void* processQueue(void *parameters)
 	{
-		propagationRange *v = (propagationRange*)parameters;
+		auto *v = (propagationRange*)parameters;
 		struct entry *elem;
 
 		alloc_elev();
@@ -82,13 +82,13 @@ void addToQueue(int x, int y)
 		}
 		free_elev();
 		free_path();
-		return NULL;
+		return nullptr;
 	}
 
 
 	void* rangePropagation(void *parameters)
 	{
-		propagationRange *v = (propagationRange*)parameters;
+		auto *v = (propagationRange*)parameters;
 		if(v->use_threads) {
 			alloc_elev();
 			alloc_path();
@@ -129,7 +129,7 @@ void addToQueue(int x, int y)
 				free_elev();
 				free_path();
 		}
-		return NULL;
+		return nullptr;
 	}
 
 	void init_processed()
@@ -160,7 +160,7 @@ void addToQueue(int x, int y)
                 if(!has_init_processed)
                         init_processed();
 
-                int rc = pthread_create(&threads[thread_count], NULL, processQueue, arg);
+                int rc = pthread_create(&threads[thread_count], nullptr, processQueue, arg);
                 if (rc)
                         fprintf(stderr,"ERROR; return code from pthread_create() is %d\n", rc);
                 else
@@ -215,7 +215,7 @@ void addToQueue(int x, int y)
 		if(!has_init_processed)
 			init_processed();
 
-		int rc = pthread_create(&threads[thread_count], NULL, rangePropagation, arg);
+		int rc = pthread_create(&threads[thread_count], nullptr, rangePropagation, arg);
 		if (rc)
 			fprintf(stderr,"ERROR; return code from pthread_create() is %d\n", rc);
 		else
@@ -304,7 +304,7 @@ void PlotLOSPath(struct site source, struct site destination, char mask_value,
 
 	char block;
 	int x, y;
-	register double cos_xmtr_angle, cos_test_angle, test_alt;
+	double cos_xmtr_angle, cos_test_angle, test_alt;
 	double distance, rx_alt, tx_alt;
 
 	ReadPath(source, destination);
@@ -440,7 +440,7 @@ void PlotPropPath(struct site source, struct site destination,
 			if (cos_rcvr_angle < -1.0)
 				cos_rcvr_angle = -1.0;
 
-			if (got_elevation_pattern || fd != NULL) {
+			if (got_elevation_pattern || fd != nullptr) {
 				/* Determine the elevation angle to the first obstruction
 				   along the path IF elevation pattern data is available
 				   or an output (.ano) file has been designated. */
@@ -629,7 +629,7 @@ void PlotPropPath(struct site source, struct site destination,
 
 			azimuth = (Azimuth(source, temp));
 
-			if (fd != NULL)
+			if (fd != nullptr)
 				buffer_offset += sprintf(fd_buffer+buffer_offset,
 					"%.7f, %.7f, %.3f, %.3f, ",
 					path.lat[y], path.lon[y], azimuth,
@@ -639,7 +639,7 @@ void PlotPropPath(struct site source, struct site destination,
 			   output file.  Otherwise, write field strength
 			   or received power level (below), as appropriate. */
 
-			if (fd != NULL && LR.erp == 0.0)
+			if (fd != nullptr && LR.erp == 0.0)
 				buffer_offset += sprintf(fd_buffer+buffer_offset,
 					"%.2f", loss);
 
@@ -670,7 +670,7 @@ void PlotPropPath(struct site source, struct site destination,
 
 					dBm = 10.0 * (log10(rxp * 1000.0));
 
-					if (fd != NULL)
+					if (fd != nullptr)
 						buffer_offset += sprintf(fd_buffer+buffer_offset,
 							"%.3f", dBm);
 
@@ -719,7 +719,7 @@ void PlotPropPath(struct site source, struct site destination,
 					PutSignal(path.lat[y], path.lon[y],
 						  (unsigned char)ifs);
 
-					if (fd != NULL)
+					if (fd != nullptr)
 						buffer_offset += sprintf(fd_buffer+buffer_offset,
 							"%.3f",
 							field_strength);
@@ -741,7 +741,7 @@ void PlotPropPath(struct site source, struct site destination,
 					  (unsigned char)ifs);
 			}
 
-			if (fd != NULL) {
+			if (fd != nullptr) {
 				if (block)
 					buffer_offset += sprintf(fd_buffer+buffer_offset,
 						" *");
@@ -780,12 +780,12 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 	   is later invoked. */
 
 	static __thread unsigned char mask_value = 1;
-	FILE *fd = NULL;
+	FILE *fd = nullptr;
 
 	if (plo_filename[0] != 0)
 		fd = fopen(plo_filename, "wb");
 
-	if (fd != NULL) {
+	if (fd != nullptr) {
 		fprintf(fd,
 			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
 			max_west, min_west, max_north, min_north);
@@ -800,12 +800,12 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 	double range_max_north[] = {max_north, max_north, min_north, max_north};
 	propagationRange* r[NUM_SECTIONS];
 
-	for(int i = 0; i < NUM_SECTIONS; ++i) {
-		propagationRange *range = new propagationRange;
+	for (int i = 0; i < NUM_SECTIONS; ++i) {
+		auto *range = new propagationRange;
 		r[i] = range;
 		range->los = true;
 
-		range->eastwest = (range_min_west[i] == range_max_west[i] ? false : true);
+		range->eastwest = range_min_west[i] != range_max_west[i];
 		range->min_west = range_min_west[i];
 		range->max_west = range_max_west[i];
 		range->min_north = range_min_north[i];
@@ -824,11 +824,11 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 
 	}
 
-	if(use_threads)
+	if (use_threads)
 		finishThreads();
 
-	for(int i = 0; i < NUM_SECTIONS; ++i){
-		delete r[i];
+	for (auto & i : r) {
+		delete i;
 	}
 
 	switch (mask_value) {
@@ -851,7 +851,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 		     use_threads)
 {
 	static __thread unsigned char mask_value = 1;
-	FILE *fd = NULL;
+	FILE *fd = nullptr;
 	
 	if (LR.erp == 0.0 && debug)
 		fprintf(stderr, "path loss");
@@ -881,7 +881,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 	if (plo_filename[0] != 0)
 		fd = fopen(plo_filename, "wb");
 
-	if (fd != NULL) {
+	if (fd != nullptr) {
 		fprintf(fd,
 			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
 			max_west, min_west, max_north, min_north);
@@ -901,7 +901,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 	propagationRange* r[CORES];
 
 	for(int i = 0; i < CORES; ++i) {
-		propagationRange *range = new propagationRange;
+		auto *range = new propagationRange;
 		r[i] = range;
 		range->los = false;
 		range->min_west = min_west;
@@ -930,7 +930,7 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 		delete r[i];
 	}
 
-       if (fd != NULL)
+       if (fd != nullptr)
 		fclose(fd);
 
 	if (mask_value < 30)
@@ -950,7 +950,7 @@ void PlotPath(struct site source, struct site destination, char mask_value)
 
 	char block;
 	int x, y;
-	register double cos_xmtr_angle, cos_test_angle, test_alt;
+	double cos_xmtr_angle, cos_test_angle, test_alt;
 	double distance, rx_alt, tx_alt;
 
 	ReadPath(source, destination);

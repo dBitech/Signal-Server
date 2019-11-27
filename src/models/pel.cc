@@ -14,16 +14,16 @@
 *  for more details.							     *
 *									     */
 
-#include <math.h>
+#include <cmath>
 
-double PlaneEarthLoss(float d, float TxH, float RxH)
-{
 /*
 Plane Earth Loss model 
 Frequency: N/A
 Distance (km): Any
 */
+double PlaneEarthLoss(float d, float TxH, float RxH)
+{
 	// Plane earth loss is independent of frequency.
-	double dbloss = 40*log10(d) + 20*log10(TxH) + 20*log10(RxH);
+	double dbloss = 40*std::log10(d) + 20*std::log10(TxH) + 20*std::log10(RxH);
 	return dbloss;
 }

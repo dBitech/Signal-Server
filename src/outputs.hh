@@ -1,5 +1,5 @@
-#ifndef _OUTPUT_HH_
-#define _OUTPUT_HH_
+#ifndef _OUTPUTS_HH_
+#define _OUTPUTS_HH_
 
 void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 		unsigned char ngs, struct site *xmtr, unsigned char txsites);
@@ -14,4 +14,4 @@ void PathReport(struct site source, struct site destination, char *name,
 void SeriesData(struct site source, struct site destination, char *name,
 		unsigned char fresnel_plot, unsigned char normalised);
 
-#endif /* _OUTPUT_HH_ */
+#endif /* _OUTPUTS_HH_ */

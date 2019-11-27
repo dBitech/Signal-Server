@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 
 // use call with log/ln as this may be faster

@@ -20,30 +20,24 @@ double version = 3.21;
 *                                                                            *
 \****************************************************************************/
 
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <errno.h>
-#include <limits.h>
-#include <bzlib.h>
-#include <zlib.h>
+#include "main.hh"
 
-#include "common.h"
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+#include <climits>
+
 #include "inputs.hh"
 #include "outputs.hh"
-#include "models/itwom3.0.hh"
 #include "models/los.hh"
-#include "models/pel.hh"
 #include "image.hh"
 
 int MAXPAGES = 10*10;
 int IPPD = 1200;
 int ARRAYSIZE = (MAXPAGES * IPPD) + 10;
 
-char sdf_path[255], opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = NULL;
+char sdf_path[255], opened = 0, gpsav = 0, ss_name[16], dashes[80], *color_file = nullptr;
 
 double earthradius, max_range = 0.0, forced_erp, dpp, ppd, yppd,
     fzone_clearance = 0.6, forced_freq, clutter, lat, lon, txh, tercon, terdic,
@@ -118,44 +112,6 @@ double LonDiff(double lon1, double lon2)
 		diff -= 360.0;
 
 	return diff;
-}
-
-void *dec2dms(double decimal, char *string)
-{
-	/* Converts decimal degrees to degrees, minutes, seconds,
-	   (DMS) and returns the result as a character string. */
-
-        char sign;
-	int degrees, minutes, seconds;
-	double a, b, c, d;
-
-	if (decimal < 0.0) {
-		decimal = -decimal;
-		sign = -1;
-	}
-
-	else
-		sign = 1;
-
-	a = floor(decimal);
-	b = 60.0 * (decimal - a);
-	c = floor(b);
-	d = 60.0 * (b - c);
-
-	degrees = (int)a;
-	minutes = (int)c;
-	seconds = (int)d;
-
-	if (seconds < 0)
-		seconds = 0;
-
-	if (seconds > 59)
-		seconds = 59;
-
-	string[0] = 0;
-	snprintf(string, 250, "%d%c %d\' %d\"", degrees * sign, 176, minutes,
-		 seconds);
-	return (string);
 }
 
 int PutMask(double lat, double lon, int value)
@@ -363,23 +319,6 @@ int AddElevation(double lat, double lon, double height, int size)
 	return found;
 }
 
-double dist(double lat1, double lon1, double lat2, double lon2)
-{
-	//ENHANCED HAVERSINE FORMULA WITH RADIUS SLIDER
-	double dx, dy, dz;
-	int polarRadius=6357;
-	int equatorRadius=6378;
-	int delta = equatorRadius-polarRadius; // 21km
-	float earthRadius = equatorRadius - ((lat1/100) * delta);
-	lon1 -= lon2;
-	lon1 *= DEG2RAD, lat1 *= DEG2RAD, lat2 *= DEG2RAD;
- 
-	dz = sin(lat1) - sin(lat2);
-	dx = cos(lon1) * cos(lat1) - cos(lat2);
-	dy = sin(lon1) * cos(lat1);
-	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * earthRadius;
-}
-
 double Distance(struct site site1, struct site site2)
 {
 	/* This function returns the great circle distance
@@ -462,7 +401,7 @@ double ElevationAngle(struct site source, struct site destination)
 	   (downtilt), as referenced to a normal to the center of
 	   the earth. */
 
-	register double a, b, dx;
+	double a, b, dx;
 
 	a = GetElevation(destination) + destination.alt + earthradius;
 	b = GetElevation(source) + source.alt + earthradius;
@@ -661,7 +600,7 @@ double ElevationAngle2(struct site source, struct site destination, double er)
 	return elevation;
 }
 
-double ReadBearing(char *input)
+double ReadBearing(const char *input)
 {
 	/* This function takes numeric input in the form of a character
 	   string, and returns an equivalent bearing in degrees as a
@@ -969,29 +908,11 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f,
 
 }
 
-void free_dem(void)
-{
-	int i;
-	int j;
-
-	for (i = 0; i < MAXPAGES; i++) {
-		for (j = 0; j < IPPD; j++) {
-			delete [] dem[i].data[j];
-			delete [] dem[i].mask[j];
-			delete [] dem[i].signal[j];
-		}
-		delete [] dem[i].data;
-		delete [] dem[i].mask;
-		delete [] dem[i].signal;
-	}
-	delete [] dem;
-}
-
-void free_elev(void) {
+void free_elev() {
   delete [] elev;
 }
 
-void free_path(void)
+void free_path()
 {
 	delete [] path.lat;
 	delete [] path.lon;
@@ -999,12 +920,12 @@ void free_path(void)
 	delete [] path.distance;
 }
 
-void alloc_elev(void)
+void alloc_elev()
 {
   elev  = new double[ARRAYSIZE + 10];
 }
 
-void alloc_dem(void)
+void alloc_dem()
 {
 	int i;
 	int j;
@@ -1022,7 +943,7 @@ void alloc_dem(void)
 	}
 }
 
-void alloc_path(void)
+void alloc_path()
 {
 	path.lat = new double[ARRAYSIZE];
 	path.lon = new double[ARRAYSIZE];
@@ -1030,7 +951,7 @@ void alloc_path(void)
 	path.distance = new double[ARRAYSIZE];
 }
 
-void do_allocs(void)
+void do_allocs()
 {
 	int i;
 
@@ -1062,7 +983,7 @@ int main(int argc, char *argv[])
 	    0, area_mode = 0, max_txsites, ngs = 0;
 
 	char mapfile[255], ano_filename[255], lidar_tiles[27000], clutter_file[255],antenna_file[255];
-	char *az_filename, *el_filename, *udt_file = NULL;
+	char *az_filename, *el_filename, *udt_file = nullptr;
 
 	double altitude = 0.0, altitudeLR = 0.0, tx_range = 0.0,
 	    rx_range = 0.0, deg_range = 0.0, deg_limit = 0.0, deg_range_lon;
@@ -1166,8 +1087,8 @@ int main(int argc, char *argv[])
 	forced_erp = -1.0;
 	forced_freq = 0.0;
 	sdf_path[0] = 0;
-	udt_file = NULL;
-	color_file = NULL;
+	udt_file = nullptr;
+	color_file = nullptr;
 	path.length = 0;
 	max_txsites = 30;
 	fzone_clearance = 0.6;
@@ -1297,7 +1218,7 @@ int main(int argc, char *argv[])
 				strncpy(tx_site[0].filename, argv[z], 253);
 				/* Antenna pattern files have the same basic name as the output file
 				 * but with a different extension. If they exist, load them now */
-				if( (az_filename = (char*) calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == NULL )
+				if( (az_filename = (char*) calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == nullptr )
 					return ENOMEM;
 				if (antenna_file[0] != '\0')
 				        strcpy(az_filename, antenna_file);
@@ -1305,7 +1226,7 @@ int main(int argc, char *argv[])
 				        strcpy(az_filename, argv[z]);
 				strcat(az_filename, AZ_FILE_SUFFIX);
 
-				if( (el_filename = (char*) calloc(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1, sizeof(char))) == NULL ){
+				if( (el_filename = (char*) calloc(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1, sizeof(char))) == nullptr ){
 					free(az_filename);
 					return ENOMEM;
 				}
@@ -1384,24 +1305,19 @@ int main(int argc, char *argv[])
 				sscanf(argv[z], "%d", &ippd);
 
 				switch (ippd) {
-				case 300:
-					MAXRAD = 500;
+				case 300:;
 					jgets = 3; // 3 dummy reads
 					break;
-				case 600:
-					MAXRAD = 500;
+				case 600:;
 					jgets = 1;
 					break;
-				case 1200:
-					MAXRAD = 200;
+				case 1200:;
 					ippd = 1200;
 					break;
-				case 3600:
-					MAXRAD = 100;
+				case 3600:;
 					ippd = 3600;
 					break;
-				default:
-					MAXRAD = 200;
+				default:;
 					ippd = 1200;
 					break;
 				}
@@ -1589,7 +1505,7 @@ int main(int argc, char *argv[])
 
 			if (z <= y && argv[z][0]) {
 				udt_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if( udt_file == NULL )
+				if( udt_file == nullptr )
 					return ENOMEM;
 				strncpy(udt_file, argv[z], 253);
 			}
@@ -1661,7 +1577,7 @@ int main(int argc, char *argv[])
 
 			if (z <= y && argv[z][0]) {
 				color_file = (char*) calloc(PATH_MAX+1, sizeof(char));
-				if (color_file == NULL)
+				if (color_file == nullptr)
 					return ENOMEM;
 				strncpy(color_file, argv[z], 253);
 			}
@@ -1947,7 +1863,7 @@ int main(int argc, char *argv[])
 	mpi = ippd-1; 
 
 	// User defined clutter file
-	if( udt_file != NULL && (result = LoadUDT(udt_file)) != 0 ){
+	if( udt_file != nullptr && (result = LoadUDT(udt_file)) != 0 ){
 		fprintf(stderr, "Error loading clutter file\n");
 		return result;
 	}
@@ -2022,7 +1938,7 @@ int main(int argc, char *argv[])
 			if (LR.erp == 0.0)
 				DoPathLoss(mapfile, geo, kml, ngs, tx_site, txsites);
 			else if (dbm)
-				DoRxdPwr((to_stdout == true ? NULL : mapfile), geo, kml, ngs, tx_site, txsites);
+				DoRxdPwr((to_stdout == true ? nullptr : mapfile), geo, kml, ngs, tx_site, txsites);
 			else
 			        if ((result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites)) != 0)
 					return result;

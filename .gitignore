@@ -11,3 +11,9 @@
 *.lai
 *.la
 *.a
+
+# JetBrains
+.idea/
+
+# CMake
+cmake-build-debug/

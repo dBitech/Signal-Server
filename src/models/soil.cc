@@ -17,7 +17,7 @@
 * Terrain permittivity: 1 - 15 (Bad to Good)
 */
 
-#include <math.h>
+#include <cmath>
 
 // use call with log/ln as this may be faster
 // use constant of value 20.0/log(10.0)

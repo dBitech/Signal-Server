@@ -12,7 +12,7 @@
 *  for more details.							     *
 *									     */
 
-#include <math.h>
+#include <cmath>
 
 double HATApathLoss(float f, float h_B, float h_M, float d, int mode)
 {
@@ -27,32 +27,32 @@ mode 1 = URBAN
 mode 2 = SUBURBAN
 mode 3 = OPEN
 */
-float lh_M;
-float C_H;
-float logf = log10(f);
+  float lh_M;
+  float C_H;
+  float logf = std::log10(f);
 
-	if(f<200){
-		lh_M = log10(1.54 * h_M);	
-		C_H = 8.29 * (lh_M * lh_M) - 1.1;
-	}else{
-		lh_M = log10(11.75 * h_M);
-		C_H = 3.2 * (lh_M * lh_M) - 4.97;
-	}
+  if (f<200) {
+      lh_M = std::log10(1.54 * h_M);
+      C_H = 8.29 * (lh_M * lh_M) - 1.1;
+  } else {
+      lh_M = std::log10(11.75 * h_M);
+      C_H = 3.2 * (lh_M * lh_M) - 4.97;
+  }
 
-	float L_u = 69.55 + 26.16 * logf - 13.82 * log10(h_B) - C_H + (44.9 - 6.55 * log10(h_B)) * log10(d);
+  float L_u = 69.55 + 26.16 * logf - 13.82 * std::log10(h_B) - C_H + (44.9 - 6.55 * std::log10(h_B)) * std::log10(d);
 
-	if (!mode || mode == 1) {
-		return L_u;	//URBAN
-	}
+  if (!mode || mode == 1) {
+      return L_u;	//URBAN
+  }
 
-	if (mode == 2) {	//SUBURBAN
-		float logf_28 = log10(f / 28);
-		return L_u - 2 * logf_28 * logf_28 - 5.4;
-	}
+  if (mode == 2) {	//SUBURBAN
+      float logf_28 = std::log10(f / 28);
+      return L_u - 2 * logf_28 * logf_28 - 5.4;
+  }
 
-	if (mode == 3) {	//OPEN
-		return L_u - 4.78 * logf * logf + 18.33 * logf - 40.94;
-	}
+  if (mode == 3) {	//OPEN
+      return L_u - 4.78 * logf * logf + 18.33 * logf - 40.94;
+  }
 
-	return 0;
+  return 0;
 }

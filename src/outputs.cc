@@ -1,10 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <math.h>
-#include <bzlib.h>
-#include <zlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
+#include <cmath>
 
 #include "common.h"
 #include "main.hh"
@@ -51,7 +49,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 		exit(success);  // Now a fatal error!
 	}
 
-	if( filename != NULL ) {
+	if( filename != nullptr ) {
 
 		if (filename[0] == 0) {
 			strncpy(filename, xmtr[0].filename, 254);
@@ -89,7 +87,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
-			filename != NULL ? mapfile : "to stdout", width, (kml ? height : height + 30));
+			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
 		fflush(stderr);
 	}
 
@@ -254,9 +252,9 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 
 	image_free(&ctx);
 
-	if( filename != NULL ) {
+	if( filename != nullptr ) {
 		fclose(fd);
-		fd = NULL;
+		fd = nullptr;
 	}
 
 }
@@ -294,7 +292,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 		//exit(success);
 	}
 
-	if( filename != NULL ) {
+	if( filename != nullptr ) {
 
 		if (filename[0] == 0) {
 			strncpy(filename, xmtr[0].filename, 254);
@@ -329,7 +327,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
-			filename != NULL ? mapfile : "to stdout", width, (kml ? height : height + 30));
+			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
 		fflush(stderr);
 	}
 
@@ -505,9 +503,9 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 
 	image_free(&ctx);
 
-	if( filename != NULL ) {
+	if( filename != nullptr ) {
 		fclose(fd);
-		fd = NULL;
+		fd = nullptr;
 	}
 	return 0;
 }
@@ -545,7 +543,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 		exit(success);  //Now a fatal error!
 	}
 
-	if( filename != NULL ) {
+	if( filename != nullptr ) {
 
 		if (filename[0] == 0) {
 			strncpy(filename, xmtr[0].filename, 254);
@@ -580,7 +578,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
-			(filename != NULL ? mapfile : "to stdout"), width, (kml ? height : height));
+			(filename != nullptr ? mapfile : "to stdout"), width, (kml ? height : height));
 		fflush(stderr);
 	}
 
@@ -751,9 +749,9 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 
 	image_free(&ctx);
 
-	if( filename != NULL ) {
+	if( filename != nullptr ) {
 		fclose(fd);
-		fd = NULL;
+		fd = nullptr;
 	}
 
 }
@@ -786,7 +784,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	    255.0 / pow((double)(max_elevation - min_elevation),
 			one_over_gamma);
 
-	if( filename != NULL ){
+	if( filename != nullptr ){
 
 		if (filename[0] == 0) {
 			strncpy(filename, xmtr[0].filename, 254);
@@ -821,7 +819,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 
 	if (debug) {
 		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
-			filename != NULL ? mapfile : "to stdout", width, (kml ? height : height + 30));
+			filename != nullptr ? mapfile : "to stdout", width, (kml ? height : height + 30));
 		fflush(stderr);
 	}
 
@@ -995,9 +993,9 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 
 	image_free(&ctx);
 
-	if( filename != NULL) {
+	if( filename != nullptr) {
 		fclose(fd);
-		fd = NULL;
+		fd = nullptr;
 	}
 
 }
@@ -1024,7 +1022,7 @@ void PathReport(struct site source, struct site destination, char *name,
 	    distance, elevation, four_thirds_earth,
 	    free_space_loss = 0.0, eirp =
 	    0.0, voltage, rxp, power_density, dkm;
-	FILE *fd = NULL, *fd2 = NULL;
+	FILE *fd = nullptr, *fd2 = nullptr;
 
 	snprintf(report_name, 80, "%s.txt%c", name, 0);
 	four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
@@ -1034,23 +1032,11 @@ void PathReport(struct site source, struct site destination, char *name,
 	fprintf(fd2, "\n\t\t--==[ Path Profile Analysis ]==--\n\n");
 	fprintf(fd2, "Transmitter site: %s\n", source.name);
 
-	if (source.lat >= 0.0) {
-
-		if (source.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",source.lat, source.lon);
-		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",source.lat, 360 - source.lon);
-		}
-	}
-
-	else {
-
-		if (source.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",source.lat, source.lon);
-		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",source.lat, 360 - source.lon);
-		}
-	}
+    if (source.lon <= 180) {
+        fprintf(fd2, "Site location: %.4f, -%.4f\n",source.lat, source.lon);
+    } else {
+        fprintf(fd2, "Site location: %.4f, %.4f\n",source.lat, 360 - source.lon);
+    }
 
 	if (metric) {
 		fprintf(fd2, "Ground elevation: %.2f meters AMSL\n",
@@ -1059,9 +1045,7 @@ void PathReport(struct site source, struct site destination, char *name,
 			"Antenna height: %.2f meters AGL / %.2f meters AMSL\n",
 			METERS_PER_FOOT * source.alt,
 			METERS_PER_FOOT * (source.alt + GetElevation(source)));
-	}
-
-	else {
+	} else {
 		fprintf(fd2, "Ground elevation: %.2f feet AMSL\n",
 			GetElevation(source));
 		fprintf(fd2, "Antenna height: %.2f feet AGL / %.2f feet AMSL\n",
@@ -1104,23 +1088,11 @@ void PathReport(struct site source, struct site destination, char *name,
 
 	fprintf(fd2, "\nReceiver site: %s\n", destination.name);
 
-	if (destination.lat >= 0.0) {
-
-		if (destination.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",destination.lat, destination.lon);
-		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",destination.lat, 360 - destination.lon);
-		}
-	}
-
-	else {
-
-		if (destination.lon <= 180){
-			fprintf(fd2, "Site location: %.4f, -%.4f\n",destination.lat, destination.lon);
-		}else{
-			fprintf(fd2, "Site location: %.4f, %.4f\n",destination.lat, 360 - destination.lon);
-		}
-	}
+    if (destination.lon <= 180) {
+        fprintf(fd2, "Site location: %.4f, -%.4f\n",destination.lat, destination.lon);
+    } else {
+        fprintf(fd2, "Site location: %.4f, %.4f\n",destination.lat, 360 - destination.lon);
+    }
 
 	if (metric) {
 		fprintf(fd2, "Ground elevation: %.2f meters AMSL\n",
@@ -1130,9 +1102,7 @@ void PathReport(struct site source, struct site destination, char *name,
 			METERS_PER_FOOT * destination.alt,
 			METERS_PER_FOOT * (destination.alt +
 					   GetElevation(destination)));
-	}
-
-	else {
+	} else {
 		fprintf(fd2, "Ground elevation: %.2f feet AMSL\n",
 			GetElevation(destination));
 		fprintf(fd2, "Antenna height: %.2f feet AGL / %.2f feet AMSL\n",
@@ -1760,13 +1730,13 @@ void SeriesData(struct site source, struct site destination, char *name,
 	    0.0, d = 0.0, d1 = 0.0, terrain, azimuth, distance, minterrain =
 	    100000.0, minearth = 100000.0;
 	struct site remote;
-	FILE *fd = NULL, *fd1 = NULL, *fd2 = NULL, *fd3 = NULL, *fd4 =
-	    NULL, *fd5 = NULL;
+	FILE *fd = nullptr, *fd1 = nullptr, *fd2 = nullptr, *fd3 = nullptr, *fd4 =
+	    nullptr, *fd5 = nullptr;
 
-	ReadPath(destination, source);
-	azimuth = Azimuth(destination, source);
+	ReadPath(destination, source);  // BUG: ARE THESE ARGS FLIPPED?
+	azimuth = Azimuth(destination, source);  // BUG: ARE THESE ARGS FLIPPED?
 	distance = Distance(destination, source);
-	refangle = ElevationAngle(destination, source);
+	refangle = ElevationAngle(destination, source);  // BUG: ARE THESE ARGS FLIPPED?
 	b = GetElevation(destination) + destination.alt + earthradius;
 
 	if (debug) {
@@ -1863,7 +1833,7 @@ void SeriesData(struct site source, struct site destination, char *name,
 					METERS_PER_FOOT * height);
 			}
 
-			if (fd1 != NULL && x > 0 && x < path.length - 2)
+			if (fd1 != nullptr && x > 0 && x < path.length - 2)
 				fprintf(fd1, "%.3f %.3f\n",
 					KM_PER_MILE * path.distance[x],
 					METERS_PER_FOOT * (terrain ==
@@ -1883,7 +1853,7 @@ void SeriesData(struct site source, struct site destination, char *name,
 		else {
 			fprintf(fd, "%.3f %.3f\n", path.distance[x], height);
 
-			if (fd1 != NULL && x > 0 && x < path.length - 2)
+			if (fd1 != nullptr && x > 0 && x < path.length - 2)
 				fprintf(fd1, "%.3f %.3f\n", path.distance[x],
 					(terrain ==
 					 0.0 ? height : (height + clutter)));
@@ -1976,7 +1946,7 @@ void SeriesData(struct site source, struct site destination, char *name,
 
 	fclose(fd);
 
-	if (fd1 != NULL)
+	if (fd1 != nullptr)
 		fclose(fd1);
 
 	fclose(fd2);
@@ -2020,5 +1990,4 @@ void SeriesData(struct site source, struct site destination, char *name,
 
 	fprintf(stderr, "\n");
 	fflush(stderr);
-
 }
