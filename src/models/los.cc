@@ -98,23 +98,27 @@ void *rangePropagation(void *parameters) {
   int y = 0;
 
   do {
-    if (lon >= 360.0) lon -= 360.0;
+    if (lon >= 360.0) {
+      lon -= 360.0;
+    }
 
     site edge;
     edge.lat = lat;
     edge.lon = lon;
     edge.alt = v->altitude;
 
-    if (v->los)
+    if (v->los) {
       PlotLOSPath(v->source, edge, v->mask_value, v->fd);
-    else
+    } else {
       PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel, v->knifeedge, v->pmenv);
+    }
 
     ++y;
-    if (v->eastwest)
+    if (v->eastwest) {
       lon = minwest + (dpp * (double)y);
-    else
+    } else {
       lat = (double)v->min_north + (dpp * (double)y);
+    }
 
   } while (v->eastwest ? (LonDiff(lon, (double)v->max_west) <= 0.0) : (lat < (double)v->max_north));
 
@@ -133,12 +137,16 @@ void init_processed() {
   processed = new bool **[MAXPAGES];
   for (i = 0; i < MAXPAGES; i++) {
     processed[i] = new bool *[ippd];
-    for (x = 0; x < ippd; x++) processed[i][x] = new bool[ippd];
+    for (x = 0; x < ippd; x++) {
+      processed[i][x] = new bool[ippd];
+    }
   }
 
   for (i = 0; i < MAXPAGES; i++) {
     for (x = 0; x < ippd; x++) {
-      for (y = 0; y < ippd; y++) processed[i][x][y] = false;
+      for (y = 0; y < ippd; y++) {
+        processed[i][x][y] = false;
+      }
     }
   }
 
@@ -146,13 +154,16 @@ void init_processed() {
 }
 
 void beginQueueThread(void *arg) {
-  if (!has_init_processed) init_processed();
+  if (!has_init_processed) {
+    init_processed();
+  }
 
   int rc = pthread_create(&threads[thread_count], nullptr, processQueue, arg);
-  if (rc)
+  if (rc) {
     fprintf(stderr, "ERROR; return code from pthread_create() is %d\n", rc);
-  else
+  } else {
     ++thread_count;
+  }
 }
 
 bool can_process(double lat, double lon) {
@@ -170,10 +181,11 @@ bool can_process(double lat, double lon) {
     x = (int)rint(ppd * (lat - dem[indx].min_north));
     y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
 
-    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
+    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
   if (found) {
@@ -197,20 +209,25 @@ bool can_process(double lat, double lon) {
 }
 
 void beginThread(void *arg) {
-  if (!has_init_processed) init_processed();
+  if (!has_init_processed) {
+    init_processed();
+  }
 
   int rc = pthread_create(&threads[thread_count], nullptr, rangePropagation, arg);
-  if (rc)
+  if (rc) {
     fprintf(stderr, "ERROR; return code from pthread_create() is %d\n", rc);
-  else
+  } else {
     ++thread_count;
+  }
 }
 
 void finishThreads() {
   void *status;
   for (unsigned int i = 0; i < thread_count; i++) {
     int rc = pthread_join(threads[i], &status);
-    if (rc) fprintf(stderr, "ERROR; return code from pthread_join() is %d\n", rc);
+    if (rc) {
+      fprintf(stderr, "ERROR; return code from pthread_join() is %d\n", rc);
+    }
   }
   thread_count = 0;
 }
@@ -307,10 +324,14 @@ void PlotLOSPath(struct site source, struct site destination, char mask_value, F
            statement is reversed from what it would
            be if the actual angles were compared. */
 
-        if (cos_xmtr_angle >= cos_test_angle) block = 1;
+        if (cos_xmtr_angle >= cos_test_angle) {
+          block = 1;
+        }
       }
 
-      if (block == 0) OrMask(path.lat[y], path.lon[y], mask_value);
+      if (block == 0) {
+        OrMask(path.lat[y], path.lon[y], mask_value);
+      }
     }
   }
 }
@@ -328,9 +349,10 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
 
   four_thirds_earth = FOUR_THIRDS * EARTHRADIUS;
 
-  for (x = 1; x < path.length - 1; x++)
+  for (x = 1; x < path.length - 1; x++) {
     elev[x + 2] =
         (path.elevation[x] == 0.0 ? path.elevation[x] * METERS_PER_FOOT : (clutter + path.elevation[x]) * METERS_PER_FOOT);
+  }
 
   /* Copy ending points without clutter */
 
@@ -369,9 +391,13 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
 
       cos_rcvr_angle = ((xmtr_alt2) + (distance * distance) - (dest_alt2)) / (2.0 * xmtr_alt * distance);
 
-      if (cos_rcvr_angle > 1.0) cos_rcvr_angle = 1.0;
+      if (cos_rcvr_angle > 1.0) {
+        cos_rcvr_angle = 1.0;
+      }
 
-      if (cos_rcvr_angle < -1.0) cos_rcvr_angle = -1.0;
+      if (cos_rcvr_angle < -1.0) {
+        cos_rcvr_angle = -1.0;
+      }
 
       if (got_elevation_pattern || fd != nullptr) {
         /* Determine the elevation angle to the first obstruction
@@ -389,9 +415,13 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
 
           cos_test_angle = ((xmtr_alt2) + (distance * distance) - (test_alt * test_alt)) / (2.0 * xmtr_alt * distance);
 
-          if (cos_test_angle > 1.0) cos_test_angle = 1.0;
+          if (cos_test_angle > 1.0) {
+            cos_test_angle = 1.0;
+          }
 
-          if (cos_test_angle < -1.0) cos_test_angle = -1.0;
+          if (cos_test_angle < -1.0) {
+            cos_test_angle = -1.0;
+          }
 
           /* Compare these two angles to determine if
              an obstruction exists.  Since we're comparing
@@ -401,13 +431,16 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
              what it would be if the angles themselves
              were compared. */
 
-          if (cos_rcvr_angle >= cos_test_angle) block = 1;
+          if (cos_rcvr_angle >= cos_test_angle) {
+            block = 1;
+          }
         }
 
-        if (block)
+        if (block) {
           elevation = ((acos(cos_test_angle)) / DEG2RAD) - 90.0;
-        else
+        } else {
           elevation = ((acos(cos_rcvr_angle)) / DEG2RAD) - 90.0;
+        }
       }
 
       /* Determine attenuation for each point along the
@@ -501,15 +534,18 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
 
       azimuth = (Azimuth(source, temp));
 
-      if (fd != nullptr)
+      if (fd != nullptr) {
         buffer_offset +=
             sprintf(fd_buffer + buffer_offset, "%.7f, %.7f, %.3f, %.3f, ", path.lat[y], path.lon[y], azimuth, elevation);
+      }
 
       /* If ERP==0, write path loss to alphanumeric
          output file.  Otherwise, write field strength
          or received power level (below), as appropriate. */
 
-      if (fd != nullptr && LR.erp == 0.0) buffer_offset += sprintf(fd_buffer + buffer_offset, "%.2f", loss);
+      if (fd != nullptr && LR.erp == 0.0) {
+        buffer_offset += sprintf(fd_buffer + buffer_offset, "%.2f", loss);
+      }
 
       /* Integrate the antenna's radiation
          pattern into the overall path loss. */
@@ -535,19 +571,27 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
 
           dBm = 10.0 * (log10(rxp * 1000.0));
 
-          if (fd != nullptr) buffer_offset += sprintf(fd_buffer + buffer_offset, "%.3f", dBm);
+          if (fd != nullptr) {
+            buffer_offset += sprintf(fd_buffer + buffer_offset, "%.3f", dBm);
+          }
 
           /* Scale roughly between 0 and 255 */
 
           ifs = 200 + (int)rint(dBm);
 
-          if (ifs < 0) ifs = 0;
+          if (ifs < 0) {
+            ifs = 0;
+          }
 
-          if (ifs > 255) ifs = 255;
+          if (ifs > 255) {
+            ifs = 255;
+          }
 
           ofs = GetSignal(path.lat[y], path.lon[y]);
 
-          if (ofs > ifs) ifs = ofs;
+          if (ofs > ifs) {
+            ifs = ofs;
+          }
 
           PutSignal(path.lat[y], path.lon[y], (unsigned char)ifs);
 
@@ -558,35 +602,48 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
 
           ifs = 100 + (int)rint(field_strength);
 
-          if (ifs < 0) ifs = 0;
+          if (ifs < 0) {
+            ifs = 0;
+          }
 
-          if (ifs > 255) ifs = 255;
+          if (ifs > 255) {
+            ifs = 255;
+          }
 
           ofs = GetSignal(path.lat[y], path.lon[y]);
 
-          if (ofs > ifs) ifs = ofs;
+          if (ofs > ifs) {
+            ifs = ofs;
+          }
 
           PutSignal(path.lat[y], path.lon[y], (unsigned char)ifs);
 
-          if (fd != nullptr) buffer_offset += sprintf(fd_buffer + buffer_offset, "%.3f", field_strength);
+          if (fd != nullptr) {
+            buffer_offset += sprintf(fd_buffer + buffer_offset, "%.3f", field_strength);
+          }
         }
       }
 
       else {
-        if (loss > 255)
+        if (loss > 255) {
           ifs = 255;
-        else
+        } else {
           ifs = (int)rint(loss);
+        }
 
         ofs = GetSignal(path.lat[y], path.lon[y]);
 
-        if (ofs < ifs && ofs != 0) ifs = ofs;
+        if (ofs < ifs && ofs != 0) {
+          ifs = ofs;
+        }
 
         PutSignal(path.lat[y], path.lon[y], (unsigned char)ifs);
       }
 
       if (fd != nullptr) {
-        if (block) buffer_offset += sprintf(fd_buffer + buffer_offset, " *");
+        if (block) {
+          buffer_offset += sprintf(fd_buffer + buffer_offset, " *");
+        }
         fprintf(fd, "%s\n", fd_buffer);
       }
 
@@ -596,9 +653,13 @@ void PlotPropPath(struct site source, struct site destination, unsigned char mas
     }
   }
 
-  if (path.lat[y] > cropLat) cropLat = path.lat[y];
+  if (path.lat[y] > cropLat) {
+    cropLat = path.lat[y];
+  }
 
-  if (y > cropLon) cropLon = y;
+  if (y > cropLon) {
+    cropLon = y;
+  }
 
   // if(cropLon>180)
   //	cropLon-=360;
@@ -617,7 +678,9 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename, bool us
   static __thread unsigned char mask_value = 1;
   FILE *fd = nullptr;
 
-  if (plo_filename[0] != 0) fd = fopen(plo_filename, "wb");
+  if (plo_filename[0] != 0) {
+    fd = fopen(plo_filename, "wb");
+  }
 
   if (fd != nullptr) {
     fprintf(fd, "%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n", max_west, min_west, max_north,
@@ -650,13 +713,16 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename, bool us
     range->mask_value = mask_value;
     range->fd = fd;
 
-    if (use_threads)
+    if (use_threads) {
       beginThread(range);
-    else
+    } else {
       rangePropagation(range);
+    }
   }
 
-  if (use_threads) finishThreads();
+  if (use_threads) {
+    finishThreads();
+  }
 
   for (auto &i : r) {
     delete i;
@@ -681,14 +747,15 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename, in
   static __thread unsigned char mask_value = 1;
   FILE *fd = nullptr;
 
-  if (LR.erp == 0.0 && debug)
+  if (LR.erp == 0.0 && debug) {
     fprintf(stderr, "path loss");
-  else {
+  } else {
     if (debug) {
-      if (dbm)
+      if (dbm) {
         fprintf(stderr, "signal power level");
-      else
+      } else {
         fprintf(stderr, "field strength");
+      }
     }
   }
   if (debug) {
@@ -697,11 +764,14 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename, in
             metric ? altitude * METERS_PER_FOOT : altitude, metric ? "meters" : "feet");
   }
 
-  if (clutter > 0.0 && debug)
+  if (clutter > 0.0 && debug) {
     fprintf(stderr, "\nand %.2f %s of ground clutter", metric ? clutter * METERS_PER_FOOT : clutter,
             metric ? "meters" : "feet");
+  }
 
-  if (plo_filename[0] != 0) fd = fopen(plo_filename, "wb");
+  if (plo_filename[0] != 0) {
+    fd = fopen(plo_filename, "wb");
+  }
 
   if (fd != nullptr) {
     fprintf(fd, "%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n", max_west, min_west, max_north,
@@ -737,21 +807,28 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename, in
     range->knifeedge = knifeedge;
     range->pmenv = pmenv;
 
-    if (use_threads)
+    if (use_threads) {
       beginQueueThread(range);
-    else
+    } else {
       rangePropagation(range);
+    }
   }
 
-  if (use_threads) finishThreads();
+  if (use_threads) {
+    finishThreads();
+  }
 
   for (int i = 0; i < CORES; ++i) {
     delete r[i];
   }
 
-  if (fd != nullptr) fclose(fd);
+  if (fd != nullptr) {
+    fclose(fd);
+  }
 
-  if (mask_value < 30) mask_value++;
+  if (mask_value < 30) {
+    mask_value++;
+  }
 }
 
 void PlotPath(struct site source, struct site destination, char mask_value) {
@@ -798,10 +875,14 @@ void PlotPath(struct site source, struct site destination, char mask_value) {
            statement is reversed from what it would
            be if the actual angles were compared. */
 
-        if (cos_xmtr_angle >= cos_test_angle) block = 1;
+        if (cos_xmtr_angle >= cos_test_angle) {
+          block = 1;
+        }
       }
 
-      if (block == 0) OrMask(path.lat[y], path.lon[y], mask_value);
+      if (block == 0) {
+        OrMask(path.lat[y], path.lon[y], mask_value);
+      }
     }
   }
 }

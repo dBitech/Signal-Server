@@ -68,9 +68,13 @@ double arccos(double x, double y) {
 
   double result = 0.0;
 
-  if (y > 0.0) result = acos(x / y);
+  if (y > 0.0) {
+    result = acos(x / y);
+  }
 
-  if (y < 0.0) result = PI + acos(x / y);
+  if (y < 0.0) {
+    result = PI + acos(x / y);
+  }
 
   return result;
 }
@@ -97,9 +101,13 @@ double LonDiff(double lon1, double lon2) {
 
   diff = lon1 - lon2;
 
-  if (diff <= -180.0) diff += 360.0;
+  if (diff <= -180.0) {
+    diff += 360.0;
+  }
 
-  if (diff >= 180.0) diff -= 360.0;
+  if (diff >= 180.0) {
+    diff -= 360.0;
+  }
 
   return diff;
 }
@@ -118,10 +126,11 @@ int PutMask(double lat, double lon, int value) {
     x = (int)rint(ppd * (lat - dem[indx].min_north));
     y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
 
-    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
+    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
   if (found) {
@@ -129,8 +138,9 @@ int PutMask(double lat, double lon, int value) {
     return ((int)dem[indx].mask[x][y]);
   }
 
-  else
+  else {
     return -1;
+  }
 }
 
 int OrMask(double lat, double lon, int value) {
@@ -147,10 +157,11 @@ int OrMask(double lat, double lon, int value) {
     x = (int)rint(ppd * (lat - dem[indx].min_north));
     y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
 
-    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
+    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
   if (found) {
@@ -158,8 +169,9 @@ int OrMask(double lat, double lon, int value) {
     return ((int)dem[indx].mask[x][y]);
   }
 
-  else
+  else {
     return -1;
+  }
 }
 
 int GetMask(double lat, double lon) {
@@ -180,27 +192,30 @@ void PutSignal(double lat, double lon, unsigned char signal) {
   strcpy(dotfile, basename);
   strcat(dotfile, ".dot");
 
-  if (signal > hottest)  // dBm, dBuV
+  if (signal > hottest) {  // dBm, dBuV
     hottest = signal;
+  }
 
   // lookup x/y for this co-ord
   for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
     x = (int)rint(ppd * (lat - dem[indx].min_north));
     y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
 
-    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
+    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
   if (found) {  // Write values to file
     dem[indx].signal[x][y] = signal;
     // return (dem[indx].signal[x][y]);
     return;
-  } else
+  } else {
     // return 0;
     return;
+  }
 }
 
 unsigned char GetSignal(double lat, double lon) {
@@ -215,16 +230,18 @@ unsigned char GetSignal(double lat, double lon) {
     x = (int)rint(ppd * (lat - dem[indx].min_north));
     y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
 
-    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
+    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
-  if (found)
+  if (found) {
     return (dem[indx].signal[x][y]);
-  else
+  } else {
     return 0;
+  }
 }
 
 double GetElevation(struct site location) {
@@ -241,10 +258,11 @@ double GetElevation(struct site location) {
   x = rint(ippd * location.lat);
   y = rint(ippd * location.lon);
   for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
-    if (x >= dem[indx].min_x && x < dem[indx].max_x && y >= dem[indx].min_y && y < dem[indx].max_y)
+    if (x >= dem[indx].min_x && x < dem[indx].max_x && y >= dem[indx].min_y && y < dem[indx].max_y) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
   if (found) {
@@ -270,19 +288,24 @@ int AddElevation(double lat, double lon, double height, int size) {
     x = (int)rint(ppd * (lat - dem[indx].min_north));
     y = mpi - (int)rint(yppd * (LonDiff(dem[indx].max_west, lon)));
 
-    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi)
+    if (x >= 0 && x <= mpi && y >= 0 && y <= mpi) {
       found = 1;
-    else
+    } else {
       indx++;
+    }
   }
 
-  if (found && size < 2) dem[indx].data[x][y] += (short)rint(height);
+  if (found && size < 2) {
+    dem[indx].data[x][y] += (short)rint(height);
+  }
 
   // Make surrounding area bigger for wide area landcover. Should enhance 3x3 pixels including c.p
   if (found && size > 1) {
     for (i = size * -1; i <= size; i = i + 1) {
       for (j = size * -1; j <= size; j = j + 1) {
-        if (x + j >= 0 && x + j <= IPPD && y + i >= 0 && y + i <= IPPD) dem[indx].data[x + j][y + i] += (short)rint(height);
+        if (x + j >= 0 && x + j <= IPPD && y + i >= 0 && y + i <= IPPD) {
+          dem[indx].data[x + j][y + i] += (short)rint(height);
+        }
       }
     }
   }
@@ -330,9 +353,13 @@ double Azimuth(struct site source, struct site destination) {
 
   /* Trap potential problems in acos() due to rounding */
 
-  if (fraction >= 1.0) fraction = 1.0;
+  if (fraction >= 1.0) {
+    fraction = 1.0;
+  }
 
-  if (fraction <= -1.0) fraction = -1.0;
+  if (fraction <= -1.0) {
+    fraction = -1.0;
+  }
 
   /* Calculate azimuth */
 
@@ -342,11 +369,17 @@ double Azimuth(struct site source, struct site destination) {
 
   diff = dest_lon - src_lon;
 
-  if (diff <= -PI) diff += TWOPI;
+  if (diff <= -PI) {
+    diff += TWOPI;
+  }
 
-  if (diff >= PI) diff -= TWOPI;
+  if (diff >= PI) {
+    diff -= TWOPI;
+  }
 
-  if (diff > 0.0) azimuth = TWOPI - azimuth;
+  if (diff > 0.0) {
+    azimuth = TWOPI - azimuth;
+  }
 
   return (azimuth / DEG2RAD);
 }
@@ -423,25 +456,30 @@ void ReadPath(struct site source, struct site destination) {
     num = cos(beta) - (sin(lat1) * sin(lat2));
     den = cos(lat1) * cos(lat2);
 
-    if (azimuth == 0.0 && (beta > HALFPI - lat1))
+    if (azimuth == 0.0 && (beta > HALFPI - lat1)) {
       lon2 = lon1 + PI;
 
-    else if (azimuth == HALFPI && (beta > HALFPI + lat1))
+    } else if (azimuth == HALFPI && (beta > HALFPI + lat1)) {
       lon2 = lon1 + PI;
 
-    else if (fabs(num / den) > 1.0)
+    } else if (fabs(num / den) > 1.0) {
       lon2 = lon1;
 
-    else {
-      if ((PI - azimuth) >= 0.0)
+    } else {
+      if ((PI - azimuth) >= 0.0) {
         lon2 = lon1 - arccos(num, den);
-      else
+      } else {
         lon2 = lon1 + arccos(num, den);
+      }
     }
 
-    while (lon2 < 0.0) lon2 += TWOPI;
+    while (lon2 < 0.0) {
+      lon2 += TWOPI;
+    }
 
-    while (lon2 > TWOPI) lon2 -= TWOPI;
+    while (lon2 > TWOPI) {
+      lon2 -= TWOPI;
+    }
 
     lat2 = lat2 / DEG2RAD;
     lon2 = lon2 / DEG2RAD;
@@ -452,7 +490,9 @@ void ReadPath(struct site source, struct site destination) {
     tempsite.lon = lon2;
     path.elevation[c] = GetElevation(tempsite);
     // fix for tile gaps in multi-tile LIDAR plots
-    if (path.elevation[c] == 0 && path.elevation[c - 1] > 10) path.elevation[c] = path.elevation[c - 1];
+    if (path.elevation[c] == 0 && path.elevation[c - 1] > 10) {
+      path.elevation[c] = path.elevation[c - 1];
+    }
     path.distance[c] = distance;
   }
 
@@ -466,10 +506,11 @@ void ReadPath(struct site source, struct site destination) {
     c++;
   }
 
-  if (c < ARRAYSIZE)
+  if (c < ARRAYSIZE) {
     path.length = c;
-  else
+  } else {
     path.length = ARRAYSIZE - 1;
+  }
 }
 
 double ElevationAngle2(struct site source, struct site destination, double er) {
@@ -527,11 +568,12 @@ double ElevationAngle2(struct site source, struct site destination, double er) {
     }
   }
 
-  if (block)
+  if (block) {
     elevation = first_obstruction_angle;
 
-  else
+  } else {
     elevation = ((acos(cos_xmtr_angle)) / DEG2RAD) - 90.0;
+  }
 
   path = temp;
 
@@ -571,11 +613,15 @@ double ReadBearing(const char *input) {
 
   length = strlen(string);
 
-  for (a = 0, b = 0; a < length; a++)
-    if (string[a] == 32) b++;
+  for (a = 0, b = 0; a < length; a++) {
+    if (string[a] == 32) {
+      b++;
+    }
+  }
 
-  if (b == 0) /* Decimal Format (40.139722) */
+  if (b == 0) { /* Decimal Format (40.139722) */
     sscanf(string, "%lf", &bearing);
+  }
 
   if (b == 2) { /* Degree, Minute, Second Format (40 08 23.xx) */
     sscanf(string, "%d %d %lf", &degrees, &minutes, &seconds);
@@ -584,12 +630,16 @@ double ReadBearing(const char *input) {
     bearing += fabs(((double)minutes) / 60.0);
     bearing += fabs(seconds / 3600.0);
 
-    if ((degrees < 0) || (minutes < 0) || (seconds < 0.0)) bearing = -bearing;
+    if ((degrees < 0) || (minutes < 0) || (seconds < 0.0)) {
+      bearing = -bearing;
+    }
   }
 
   /* Anything else returns a 0.0 */
 
-  if (bearing > 360.0 || bearing < -360.0) bearing = 0.0;
+  if (bearing > 360.0 || bearing < -360.0) {
+    bearing = 0.0;
+  }
 
   return bearing;
 }
@@ -615,15 +665,18 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f, FILE *out
   cos_tx_angle_f1 = cos_tx_angle;
   cos_tx_angle_fpt6 = cos_tx_angle;
 
-  if (f) lambda = 9.8425e8 / (f * 1e6);
+  if (f) {
+    lambda = 9.8425e8 / (f * 1e6);
+  }
 
   if (clutter > 0.0) {
     fprintf(outfile, "Terrain has been raised by");
 
-    if (metric)
+    if (metric) {
       fprintf(outfile, " %.2f meters", METERS_PER_FOOT * clutter);
-    else
+    } else {
       fprintf(outfile, " %.2f feet", clutter);
+    }
 
     fprintf(outfile, " to account for ground clutter.\n\n");
   }
@@ -655,24 +708,28 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f, FILE *out
     cos_test_angle = ((h_r * h_r) + (d_x * d_x) - (h_x * h_x)) / (2.0 * h_r * d_x);
 
     if (cos_tx_angle > cos_test_angle) {
-      if (h_r == h_r_orig) fprintf(outfile, "Between %s and %s, obstructions were detected at:\n\n", rcvr.name, xmtr.name);
+      if (h_r == h_r_orig) {
+        fprintf(outfile, "Between %s and %s, obstructions were detected at:\n\n", rcvr.name, xmtr.name);
+      }
 
       if (site_x.lat >= 0.0) {
-        if (metric)
+        if (metric) {
           fprintf(outfile, "   %8.4f N,%9.4f W, %5.2f kilometers, %6.2f meters AMSL\n", site_x.lat, site_x.lon,
                   KM_PER_MILE * (d_x / FEET_PER_MILE), METERS_PER_FOOT * (h_x - earthradius));
-        else
+        } else {
           fprintf(outfile, "   %8.4f N,%9.4f W, %5.2f miles, %6.2f feet AMSL\n", site_x.lat, site_x.lon, d_x / FEET_PER_MILE,
                   h_x - earthradius);
+        }
       }
 
       else {
-        if (metric)
+        if (metric) {
           fprintf(outfile, "   %8.4f S,%9.4f W, %5.2f kilometers, %6.2f meters AMSL\n", -site_x.lat, site_x.lon,
                   KM_PER_MILE * (d_x / FEET_PER_MILE), METERS_PER_FOOT * (h_x - earthradius));
-        else
+        } else {
           fprintf(outfile, "   %8.4f S,%9.4f W, %5.2f miles, %6.2f feet AMSL\n", -site_x.lat, site_x.lon, d_x / FEET_PER_MILE,
                   h_x - earthradius);
+        }
       }
     }
 
@@ -712,47 +769,53 @@ void ObstructionAnalysis(struct site xmtr, struct site rcvr, double f, FILE *out
   }
 
   if (h_r > h_r_orig) {
-    if (metric)
+    if (metric) {
       snprintf(string, 150, "\nAntenna at %s must be raised to at least %.2f meters AGL\nto clear all obstructions detected.\n",
                rcvr.name, METERS_PER_FOOT * (h_r - GetElevation(rcvr) - earthradius));
-    else
+    } else {
       snprintf(string, 150, "\nAntenna at %s must be raised to at least %.2f feet AGL\nto clear all obstructions detected.\n",
                rcvr.name, h_r - GetElevation(rcvr) - earthradius);
+    }
   }
 
-  else
+  else {
     snprintf(string, 150, "\nNo obstructions to LOS path due to terrain were detected\n");
+  }
 
   if (f) {
     if (h_r_fpt6 > h_r_orig) {
-      if (metric)
+      if (metric) {
         snprintf(string_fpt6, 150,
                  "\nAntenna at %s must be raised to at least %.2f meters AGL\nto clear %.0f%c of the first Fresnel zone.\n",
                  rcvr.name, METERS_PER_FOOT * (h_r_fpt6 - GetElevation(rcvr) - earthradius), fzone_clearance * 100.0, 37);
 
-      else
+      } else {
         snprintf(string_fpt6, 150,
                  "\nAntenna at %s must be raised to at least %.2f feet AGL\nto clear %.0f%c of the first Fresnel zone.\n",
                  rcvr.name, h_r_fpt6 - GetElevation(rcvr) - earthradius, fzone_clearance * 100.0, 37);
+      }
     }
 
-    else
+    else {
       snprintf(string_fpt6, 150, "\n%.0f%c of the first Fresnel zone is clear.\n", fzone_clearance * 100.0, 37);
+    }
 
     if (h_r_f1 > h_r_orig) {
-      if (metric)
+      if (metric) {
         snprintf(string_f1, 150,
                  "\nAntenna at %s must be raised to at least %.2f meters AGL\nto clear the first Fresnel zone.\n", rcvr.name,
                  METERS_PER_FOOT * (h_r_f1 - GetElevation(rcvr) - earthradius));
 
-      else
+      } else {
         snprintf(string_f1, 150, "\nAntenna at %s must be raised to at least %.2f feet AGL\nto clear the first Fresnel zone.\n",
                  rcvr.name, h_r_f1 - GetElevation(rcvr) - earthradius);
+      }
 
     }
 
-    else
+    else {
       snprintf(string_f1, 150, "\nThe first Fresnel zone is clear.\n");
+    }
   }
 
   fprintf(outfile, "%s", string);
@@ -912,7 +975,9 @@ int main(int argc, char *argv[]) {
    * memory now. For LIDAR we need to wait until we've parsed
    * the headers in the .asc file to know how much memory to allocate...
    */
-  if (!lidar) do_allocs();
+  if (!lidar) {
+    do_allocs();
+  }
 
   y = argc - 1;
   kml = 0;
@@ -987,7 +1052,9 @@ int main(int argc, char *argv[]) {
       if (z <= y && argv[z][0] && argv[z][0] != '-') {
         sscanf(argv[z], "%lf", &clutter);
 
-        if (clutter < 0.0) clutter = 0.0;
+        if (clutter < 0.0) {
+          clutter = 0.0;
+        }
       }
     }
 
@@ -1013,8 +1080,12 @@ int main(int argc, char *argv[]) {
       if (z <= y && argv[z][0] && argv[z][0] != '-') {
         sscanf(argv[z], "%lf", &antenna_rotation);
 
-        if (antenna_rotation < 0.0) antenna_rotation = 0.0;
-        if (antenna_rotation > 359.0) antenna_rotation = 0.0;
+        if (antenna_rotation < 0.0) {
+          antenna_rotation = 0.0;
+        }
+        if (antenna_rotation > 359.0) {
+          antenna_rotation = 0.0;
+        }
       }
     }
 
@@ -1023,8 +1094,12 @@ int main(int argc, char *argv[]) {
 
       if (z <= y && argv[z][0]) { /* A minus argument is legal here */
         sscanf(argv[z], "%lf", &antenna_downtilt);
-        if (antenna_downtilt < -10.0) antenna_downtilt = -10.0;
-        if (antenna_downtilt > 90.0) antenna_downtilt = 90.0;
+        if (antenna_downtilt < -10.0) {
+          antenna_downtilt = -10.0;
+        }
+        if (antenna_downtilt > 90.0) {
+          antenna_downtilt = 90.0;
+        }
       }
     }
 
@@ -1034,8 +1109,12 @@ int main(int argc, char *argv[]) {
       if (z <= y && argv[z][0] && argv[z][0] != '-') {
         sscanf(argv[z], "%lf", &antenna_dt_direction);
 
-        if (antenna_dt_direction < 0.0) antenna_dt_direction = 0.0;
-        if (antenna_dt_direction > 359.0) antenna_dt_direction = 0.0;
+        if (antenna_dt_direction < 0.0) {
+          antenna_dt_direction = 0.0;
+        }
+        if (antenna_dt_direction > 359.0) {
+          antenna_dt_direction = 0.0;
+        }
       }
     }
 
@@ -1048,22 +1127,25 @@ int main(int argc, char *argv[]) {
         strncpy(tx_site[0].filename, argv[z], 253);
         /* Antenna pattern files have the same basic name as the output file
          * but with a different extension. If they exist, load them now */
-        if ((az_filename = (char *)calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == nullptr)
+        if ((az_filename = (char *)calloc(strlen(argv[z]) + strlen(AZ_FILE_SUFFIX) + 1, sizeof(char))) == nullptr) {
           return ENOMEM;
-        if (antenna_file[0] != '\0')
+        }
+        if (antenna_file[0] != '\0') {
           strcpy(az_filename, antenna_file);
-        else
+        } else {
           strcpy(az_filename, argv[z]);
+        }
         strcat(az_filename, AZ_FILE_SUFFIX);
 
         if ((el_filename = (char *)calloc(strlen(argv[z]) + strlen(EL_FILE_SUFFIX) + 1, sizeof(char))) == nullptr) {
           free(az_filename);
           return ENOMEM;
         }
-        if (antenna_file[0] != '\0')
+        if (antenna_file[0] != '\0') {
           strcpy(el_filename, antenna_file);
-        else
+        } else {
           strcpy(el_filename, argv[z]);
+        }
         strcat(el_filename, EL_FILE_SUFFIX);
 
         if ((result = LoadPAT(az_filename, el_filename)) != 0) {
@@ -1095,8 +1177,9 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[x], "-rt") == 0) {
       z = x + 1;
 
-      if (z <= y && argv[z][0]) /* A minus argument is legal here */
+      if (z <= y && argv[z][0]) { /* A minus argument is legal here */
         sscanf(argv[z], "%d", &contour_threshold);
+      }
     }
 
     if (strcmp(argv[x], "-m") == 0) {
@@ -1107,18 +1190,24 @@ int main(int argc, char *argv[]) {
       ngs = 0;  // greyscale background
     }
 
-    if (strcmp(argv[x], "-dbm") == 0) dbm = 1;
+    if (strcmp(argv[x], "-dbm") == 0) {
+      dbm = 1;
+    }
 
     if (strcmp(argv[x], "-sdf") == 0) {
       z = x + 1;
 
-      if (z <= y && argv[z][0] && argv[z][0] != '-') strncpy(sdf_path, argv[z], 253);
+      if (z <= y && argv[z][0] && argv[z][0] != '-') {
+        strncpy(sdf_path, argv[z], 253);
+      }
     }
 
     if (strcmp(argv[x], "-lid") == 0) {
       z = x + 1;
       lidar = 1;
-      if (z <= y && argv[z][0] && argv[z][0] != '-') strncpy(lidar_tiles, argv[z], 27000);  // 900 tiles!
+      if (z <= y && argv[z][0] && argv[z][0] != '-') {
+        strncpy(lidar_tiles, argv[z], 27000);  // 900 tiles!
+      }
     }
 
     if (strcmp(argv[x], "-res") == 0) {
@@ -1170,7 +1259,9 @@ int main(int argc, char *argv[]) {
       if (z <= y && argv[z][0]) {
         tx_site[0].lon = ReadBearing(argv[z]);
         tx_site[0].lon *= -1;
-        if (tx_site[0].lon < 0.0) tx_site[0].lon += 360.0;
+        if (tx_site[0].lon < 0.0) {
+          tx_site[0].lon += 360.0;
+        }
       }
     }
     // Switch to Path Profile Mode if Rx co-ords specified
@@ -1187,7 +1278,9 @@ int main(int argc, char *argv[]) {
       if (z <= y && argv[z][0]) {
         tx_site[1].lon = ReadBearing(argv[z]);
         tx_site[1].lon *= -1;
-        if (tx_site[1].lon < 0.0) tx_site[1].lon += 360.0;
+        if (tx_site[1].lon < 0.0) {
+          tx_site[1].lon += 360.0;
+        }
       }
     }
 
@@ -1315,7 +1408,9 @@ int main(int argc, char *argv[]) {
 
       if (z <= y && argv[z][0]) {
         udt_file = (char *)calloc(PATH_MAX + 1, sizeof(char));
-        if (udt_file == nullptr) return ENOMEM;
+        if (udt_file == nullptr) {
+          return ENOMEM;
+        }
         strncpy(udt_file, argv[z], 253);
       }
     }
@@ -1386,7 +1481,9 @@ int main(int argc, char *argv[]) {
 
       if (z <= y && argv[z][0]) {
         color_file = (char *)calloc(PATH_MAX + 1, sizeof(char));
-        if (color_file == nullptr) return ENOMEM;
+        if (color_file == nullptr) {
+          return ENOMEM;
+        }
         strncpy(color_file, argv[z], 253);
       }
     }
@@ -1484,25 +1581,41 @@ int main(int argc, char *argv[]) {
   txlat = (int)floor(tx_site[0].lat);
   txlon = (int)floor(tx_site[0].lon);
 
-  if (txlat < min_lat) min_lat = txlat;
+  if (txlat < min_lat) {
+    min_lat = txlat;
+  }
 
-  if (txlat > max_lat) max_lat = txlat;
+  if (txlat > max_lat) {
+    max_lat = txlat;
+  }
 
-  if (LonDiff(txlon, min_lon) < 0.0) min_lon = txlon;
+  if (LonDiff(txlon, min_lon) < 0.0) {
+    min_lon = txlon;
+  }
 
-  if (LonDiff(txlon, max_lon) >= 0.0) max_lon = txlon;
+  if (LonDiff(txlon, max_lon) >= 0.0) {
+    max_lon = txlon;
+  }
 
   if (ppa == 1) {
     rxlat = (int)floor(tx_site[1].lat);
     rxlon = (int)floor(tx_site[1].lon);
 
-    if (rxlat < min_lat) min_lat = rxlat;
+    if (rxlat < min_lat) {
+      min_lat = rxlat;
+    }
 
-    if (rxlat > max_lat) max_lat = rxlat;
+    if (rxlat > max_lat) {
+      max_lat = rxlat;
+    }
 
-    if (LonDiff(rxlon, min_lon) < 0.0) min_lon = rxlon;
+    if (LonDiff(rxlon, min_lon) < 0.0) {
+      min_lon = rxlon;
+    }
 
-    if (LonDiff(rxlon, max_lon) >= 0.0) max_lon = rxlon;
+    if (LonDiff(rxlon, max_lon) >= 0.0) {
+      max_lon = rxlon;
+    }
   }
 
   /* Load the required tiles */
@@ -1556,10 +1669,11 @@ int main(int argc, char *argv[]) {
 
         tx_range = sqrt(1.5 * (tx_site[z].alt + GetElevation(tx_site[z])));
 
-        if (LRmap)
+        if (LRmap) {
           rx_range = sqrt(1.5 * altitudeLR);
-        else
+        } else {
           rx_range = sqrt(1.5 * altitude);
+        }
 
         /* deg_range determines the maximum
            amount of topo data we read */
@@ -1574,46 +1688,69 @@ int main(int argc, char *argv[]) {
            width of the analysis and the size of
            the map. */
 
-        if (max_range == 0.0) max_range = tx_range + rx_range;
+        if (max_range == 0.0) {
+          max_range = tx_range + rx_range;
+        }
 
         deg_range = max_range / 57.0;
 
         // No more than 8 degs
         deg_limit = 3.5;
 
-        if (fabs(tx_site[z].lat) < 70.0)
+        if (fabs(tx_site[z].lat) < 70.0) {
           deg_range_lon = deg_range / cos(DEG2RAD * tx_site[z].lat);
-        else
+        } else {
           deg_range_lon = deg_range / cos(DEG2RAD * 70.0);
+        }
 
         /* Correct for squares in degrees not being square in miles */
 
-        if (deg_range > deg_limit) deg_range = deg_limit;
+        if (deg_range > deg_limit) {
+          deg_range = deg_limit;
+        }
 
-        if (deg_range_lon > deg_limit) deg_range_lon = deg_limit;
+        if (deg_range_lon > deg_limit) {
+          deg_range_lon = deg_limit;
+        }
 
         nortRxHin = (int)floor(tx_site[z].lat - deg_range);
         nortRxHax = (int)floor(tx_site[z].lat + deg_range);
 
         west_min = (int)floor(tx_site[z].lon - deg_range_lon);
 
-        while (west_min < 0) west_min += 360;
+        while (west_min < 0) {
+          west_min += 360;
+        }
 
-        while (west_min >= 360) west_min -= 360;
+        while (west_min >= 360) {
+          west_min -= 360;
+        }
 
         west_max = (int)floor(tx_site[z].lon + deg_range_lon);
 
-        while (west_max < 0) west_max += 360;
+        while (west_max < 0) {
+          west_max += 360;
+        }
 
-        while (west_max >= 360) west_max -= 360;
+        while (west_max >= 360) {
+          west_max -= 360;
+        }
 
-        if (nortRxHin < min_lat) min_lat = nortRxHin;
+        if (nortRxHin < min_lat) {
+          min_lat = nortRxHin;
+        }
 
-        if (nortRxHax > max_lat) max_lat = nortRxHax;
+        if (nortRxHax > max_lat) {
+          max_lat = nortRxHax;
+        }
 
-        if (LonDiff(west_min, min_lon) < 0.0) min_lon = west_min;
+        if (LonDiff(west_min, min_lon) < 0.0) {
+          min_lon = west_min;
+        }
 
-        if (LonDiff(west_max, max_lon) >= 0.0) max_lon = west_max;
+        if (LonDiff(west_max, max_lon) >= 0.0) {
+          max_lon = west_max;
+        }
       }
 
       /* Load any additional SDF files, if required */
@@ -1709,21 +1846,26 @@ int main(int argc, char *argv[]) {
       }
 
       // Write bitmap
-      if (LR.erp == 0.0)
+      if (LR.erp == 0.0) {
         DoPathLoss(mapfile, geo, kml, ngs, tx_site, txsites);
-      else if (dbm)
+      } else if (dbm) {
         DoRxdPwr((to_stdout == true ? nullptr : mapfile), geo, kml, ngs, tx_site, txsites);
-      else if ((result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites)) != 0)
+      } else if ((result = DoSigStr(mapfile, geo, kml, ngs, tx_site, txsites)) != 0) {
         return result;
+      }
     }
     /*if(lidar){
             east=eastoffset;
             west=westoffset;
     }*/
 
-    if (tx_site[0].lon > 0.0) tx_site[0].lon *= -1;
+    if (tx_site[0].lon > 0.0) {
+      tx_site[0].lon *= -1;
+    }
 
-    if (tx_site[0].lon < -180.0) tx_site[0].lon += 360;
+    if (tx_site[0].lon < -180.0) {
+      tx_site[0].lon += 360;
+    }
 
     if (cropping) {
       fprintf(stderr, "|%.6f", tx_site[0].lat + cropLat);

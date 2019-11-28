@@ -66,14 +66,17 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
 
   minwest = ((double)min_west) + dpp;
 
-  if (minwest > 360.0) minwest -= 360.0;
+  if (minwest > 360.0) {
+    minwest -= 360.0;
+  }
 
   north = (double)max_north - dpp;
 
-  if (kml || geo)
+  if (kml || geo) {
     south = (double)min_north; /* No bottom legend */
-  else
+  } else {
     south = (double)min_north - (30.0 / ppd); /* 30 pixels for bottom legend */
+  }
 
   east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
   west = (double)(max_west < 180 ? -max_west : 360 - max_west);
@@ -86,7 +89,9 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
 
   for (y = 0, lat = north; y < (int)height; y++, lat = north - (dpp * (double)y)) {
     for (x = 0, lon = max_west; x < (int)width; x++, lon = max_west - (dpp * (double)x)) {
-      if (lon < 0.0) lon += 360.0;
+      if (lon < 0.0) {
+        lon += 360.0;
+      }
 
       for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
         x0 = (int)rint(ppd * (lat - (double)dem[indx].min_north));
@@ -98,10 +103,11 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
                   }
           }*/
 
-        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi)
+        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
           found = 1;
-        else
+        } else {
           indx++;
+        }
       }
 
       if (found) {
@@ -115,11 +121,13 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
         green = 0;
         blue = 0;
 
-        if (loss <= region.level[0])
+        if (loss <= region.level[0]) {
           match = 0;
-        else {
+        } else {
           for (z = 1; (z < region.levels && match == 255); z++) {
-            if (loss >= region.level[z - 1] && loss < region.level[z]) match = z;
+            if (loss >= region.level[z - 1] && loss < region.level[z]) {
+              match = z;
+            }
           }
         }
 
@@ -132,10 +140,11 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
         if (mask & 2) {
           /* Text Labels: Red or otherwise */
 
-          if (red >= 180 && green <= 75 && blue <= 75 && loss == 0)
+          if (red >= 180 && green <= 75 && blue <= 75 && loss == 0) {
             ADD_PIXEL(&ctx, 255 ^ red, 255 ^ green, 255 ^ blue);
-          else
+          } else {
             ADD_PIXEL(&ctx, 255, 0, 0);
+          }
 
           cityorcounty = 1;
         }
@@ -150,14 +159,14 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
 
         if (cityorcounty == 0) {
           if (loss == 0 || (contour_threshold != 0 && loss > abs(contour_threshold))) {
-            if (ngs) /* No terrain */
+            if (ngs) { /* No terrain */
               ADD_PIXEL(&ctx, 255, 255, 255);
-            else {
+            } else {
               /* Display land or sea elevation */
 
-              if (dem[indx].data[x0][y0] == 0)
+              if (dem[indx].data[x0][y0] == 0) {
                 ADD_PIXEL(&ctx, 0, 0, 170);
-              else {
+              } else {
                 terrain = (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
                 ADD_PIXEL(&ctx, terrain, terrain, terrain);
               }
@@ -167,14 +176,14 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml, unsigned c
           else {
             /* Plot path loss in color */
 
-            if (red != 0 || green != 0 || blue != 0)
+            if (red != 0 || green != 0 || blue != 0) {
               ADD_PIXEL(&ctx, red, green, blue);
 
-            else { /* terrain / sea-level */
+            } else { /* terrain / sea-level */
 
-              if (dem[indx].data[x0][y0] == 0)
+              if (dem[indx].data[x0][y0] == 0) {
                 ADD_PIXEL(&ctx, 0, 0, 170);
-              else {
+              } else {
                 /* Elevation: Greyscale */
                 terrain = (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
                 ADD_PIXEL(&ctx, terrain, terrain, terrain);
@@ -256,7 +265,9 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
 
   minwest = ((double)min_west) + dpp;
 
-  if (minwest > 360.0) minwest -= 360.0;
+  if (minwest > 360.0) {
+    minwest -= 360.0;
+  }
 
   north = (double)max_north - dpp;
 
@@ -273,7 +284,9 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
 
   for (y = 0, lat = north; y < (int)height; y++, lat = north - (dpp * (double)y)) {
     for (x = 0, lon = max_west; x < (int)width; x++, lon = max_west - (dpp * (double)x)) {
-      if (lon < 0.0) lon += 360.0;
+      if (lon < 0.0) {
+        lon += 360.0;
+      }
 
       for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
         x0 = (int)rint(ppd * (lat - (double)dem[indx].min_north));
@@ -287,10 +300,11 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
              }
              */
 
-        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi)
+        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
           found = 1;
-        else
+        } else {
           indx++;
+        }
       }
 
       if (found) {
@@ -303,11 +317,13 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
         green = 0;
         blue = 0;
 
-        if (signal >= region.level[0])
+        if (signal >= region.level[0]) {
           match = 0;
-        else {
+        } else {
           for (z = 1; (z < region.levels && match == 255); z++) {
-            if (signal < region.level[z - 1] && signal >= region.level[z]) match = z;
+            if (signal < region.level[z - 1] && signal >= region.level[z]) {
+              match = z;
+            }
           }
         }
 
@@ -320,10 +336,11 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
         if (mask & 2) {
           /* Text Labels: Red or otherwise */
 
-          if (red >= 180 && green <= 75 && blue <= 75)
+          if (red >= 180 && green <= 75 && blue <= 75) {
             ADD_PIXEL(&ctx, 255 ^ red, 255 ^ green, 255 ^ blue);
-          else
+          } else {
             ADD_PIXEL(&ctx, 255, 0, 0);
+          }
 
           cityorcounty = 1;
         }
@@ -338,14 +355,14 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
 
         if (cityorcounty == 0) {
           if (contour_threshold != 0 && signal < contour_threshold) {
-            if (ngs)
+            if (ngs) {
               ADD_PIXEL(&ctx, 255, 255, 255);
-            else {
+            } else {
               /* Display land or sea elevation */
 
-              if (dem[indx].data[x0][y0] == 0)
+              if (dem[indx].data[x0][y0] == 0) {
                 ADD_PIXEL(&ctx, 0, 0, 170);
-              else {
+              } else {
                 terrain = (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
                 ADD_PIXEL(&ctx, terrain, terrain, terrain);
               }
@@ -355,17 +372,17 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml, unsigned char
           else {
             /* Plot field strength regions in color */
 
-            if (red != 0 || green != 0 || blue != 0)
+            if (red != 0 || green != 0 || blue != 0) {
               ADD_PIXEL(&ctx, red, green, blue);
 
-            else { /* terrain / sea-level */
+            } else { /* terrain / sea-level */
 
-              if (ngs)
+              if (ngs) {
                 ADD_PIXEL(&ctx, 255, 255, 255);
-              else {
-                if (dem[indx].data[x0][y0] == 0)
+              } else {
+                if (dem[indx].data[x0][y0] == 0) {
                   ADD_PIXEL(&ctx, 0, 0, 170);
-                else {
+                } else {
                   /* Elevation: Greyscale */
                   terrain =
                       (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
@@ -450,7 +467,9 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml, unsigned cha
 
   minwest = ((double)min_west) + dpp;
 
-  if (minwest > 360.0) minwest -= 360.0;
+  if (minwest > 360.0) {
+    minwest -= 360.0;
+  }
 
   north = (double)max_north - dpp;
 
@@ -468,16 +487,19 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml, unsigned cha
   // Draw image of x by y pixels
   for (y = 0, lat = north; y < (int)height; y++, lat = north - (dpp * (double)y)) {
     for (x = 0, lon = max_west; x < (int)width; x++, lon = max_west - (dpp * (double)x)) {
-      if (lon < 0.0) lon += 360.0;
+      if (lon < 0.0) {
+        lon += 360.0;
+      }
 
       for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
         x0 = (int)rint((ppd * (lat - (double)dem[indx].min_north)));
         y0 = mpi - (int)rint(ppd * (LonDiff((double)dem[indx].max_west, lon)));
 
-        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi)
+        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
           found = 1;
-        else
+        } else {
           indx++;
+        }
       }
 
       if (found) {
@@ -490,11 +512,13 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml, unsigned cha
         green = 0;
         blue = 0;
 
-        if (dBm >= region.level[0])
+        if (dBm >= region.level[0]) {
           match = 0;
-        else {
+        } else {
           for (z = 1; (z < region.levels && match == 255); z++) {
-            if (dBm < region.level[z - 1] && dBm >= region.level[z]) match = z;
+            if (dBm < region.level[z - 1] && dBm >= region.level[z]) {
+              match = z;
+            }
           }
         }
 
@@ -507,10 +531,11 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml, unsigned cha
         if (mask & 2) {
           /* Text Labels: Red or otherwise */
 
-          if (red >= 180 && green <= 75 && blue <= 75 && dBm != 0)
+          if (red >= 180 && green <= 75 && blue <= 75 && dBm != 0) {
             ADD_PIXEL(&ctx, 255 ^ red, 255 ^ green, 255 ^ blue);
-          else
+          } else {
             ADD_PIXEL(&ctx, 255, 0, 0);
+          }
 
           cityorcounty = 1;
         }
@@ -523,14 +548,14 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml, unsigned cha
 
         if (cityorcounty == 0) {
           if (contour_threshold != 0 && dBm < contour_threshold) {
-            if (ngs) /* No terrain */
+            if (ngs) { /* No terrain */
               ADD_PIXEL(&ctx, 255, 255, 255);
-            else {
+            } else {
               /* Display land or sea elevation */
 
-              if (dem[indx].data[x0][y0] == 0)
+              if (dem[indx].data[x0][y0] == 0) {
                 ADD_PIXEL(&ctx, 0, 0, 170);
-              else {
+              } else {
                 terrain = (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
                 ADD_PIXEL(&ctx, terrain, terrain, terrain);
               }
@@ -540,19 +565,19 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml, unsigned cha
           else {
             /* Plot signal power level regions in color */
 
-            if (red != 0 || green != 0 || blue != 0)
+            if (red != 0 || green != 0 || blue != 0) {
               ADD_PIXEL(&ctx, red, green, blue);
 
-            else { /* terrain / sea-level */
+            } else { /* terrain / sea-level */
 
-              if (ngs)
+              if (ngs) {
                 ADD_PIXEL(&ctx, 255, 255,
                           255);  // WHITE
-              else {
-                if (dem[indx].data[x0][y0] == 0)
+              } else {
+                if (dem[indx].data[x0][y0] == 0) {
                   ADD_PIXEL(&ctx, 0, 0,
                             170);  // BLUE
-                else {
+                } else {
                   /* Elevation: Greyscale */
                   terrain =
                       (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
@@ -632,7 +657,9 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml, unsigned char n
 
   minwest = ((double)min_west) + dpp;
 
-  if (minwest > 360.0) minwest -= 360.0;
+  if (minwest > 360.0) {
+    minwest -= 360.0;
+  }
 
   north = (double)max_north - dpp;
 
@@ -649,29 +676,32 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml, unsigned char n
 
   for (y = 0, lat = north; y < (int)height; y++, lat = north - (dpp * (double)y)) {
     for (x = 0, lon = max_west; x < (int)width; x++, lon = max_west - (dpp * (double)x)) {
-      if (lon < 0.0) lon += 360.0;
+      if (lon < 0.0) {
+        lon += 360.0;
+      }
 
       for (indx = 0, found = 0; indx < MAXPAGES && found == 0;) {
         x0 = (int)rint(ppd * (lat - (double)dem[indx].min_north));
         y0 = mpi - (int)rint(ppd * (LonDiff((double)dem[indx].max_west, lon)));
 
-        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi)
+        if (x0 >= 0 && x0 <= mpi && y0 >= 0 && y0 <= mpi) {
           found = 1;
-        else
+        } else {
           indx++;
+        }
       }
 
       if (found) {
         mask = dem[indx].mask[x0][y0];
 
-        if (mask & 2) /* Text Labels: Red */
+        if (mask & 2) { /* Text Labels: Red */
           ADD_PIXEL(&ctx, 255, 0, 0);
 
-        else if (mask & 4)
+        } else if (mask & 4) {
           /* County Boundaries: Light Cyan */
           ADD_PIXEL(&ctx, 128, 128, 255);
 
-        else
+        } else {
           switch (mask & 57) {
             case 1:
               /* TX1: Green */
@@ -749,13 +779,13 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml, unsigned char n
               break;
 
             default:
-              if (ngs) /* No terrain */
+              if (ngs) { /* No terrain */
                 ADD_PIXEL(&ctx, 255, 255, 255);
-              else {
+              } else {
                 /* Sea-level: Medium Blue */
-                if (dem[indx].data[x0][y0] == 0)
+                if (dem[indx].data[x0][y0] == 0) {
                   ADD_PIXEL(&ctx, 0, 0, 170);
-                else {
+                } else {
                   /* Elevation: Greyscale */
                   terrain =
                       (unsigned)(0.5 + pow((double)(dem[indx].data[x0][y0] - min_elevation), one_over_gamma) * conversion);
@@ -763,6 +793,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml, unsigned char n
                 }
               }
           }
+        }
       }
 
       else {
@@ -835,16 +866,19 @@ void PathReport(struct site source, struct site destination, char *name, char gr
   if (got_azimuth_pattern || got_elevation_pattern) {
     x = (int)rint(10.0 * (10.0 - angle2));
 
-    if (x >= 0 && x <= 1000) pattern = (double)LR.antenna_pattern[(int)rint(azimuth)][x];
+    if (x >= 0 && x <= 1000) {
+      pattern = (double)LR.antenna_pattern[(int)rint(azimuth)][x];
+    }
 
     patterndB = 20.0 * log10(pattern);
   }
 
-  if (metric)
+  if (metric) {
     fprintf(fd2, "Distance to %s: %.2f kilometers\n", destination.name, KM_PER_MILE * Distance(source, destination));
 
-  else
+  } else {
     fprintf(fd2, "Distance to %s: %.2f miles\n", destination.name, Distance(source, destination));
+  }
 
   fprintf(fd2, "Azimuth to %s: %.2f degrees grid\n", destination.name, azimuth);
 
@@ -870,11 +904,12 @@ void PathReport(struct site source, struct site destination, char *name, char gr
             destination.alt + GetElevation(destination));
   }
 
-  if (metric)
+  if (metric) {
     fprintf(fd2, "Distance to %s: %.2f kilometers\n", source.name, KM_PER_MILE * Distance(source, destination));
 
-  else
+  } else {
     fprintf(fd2, "Distance to %s: %.2f miles\n", source.name, Distance(source, destination));
+  }
 
   azimuth = Azimuth(destination, source);
 
@@ -972,9 +1007,13 @@ void PathReport(struct site source, struct site destination, char *name, char gr
 
     fprintf(fd2, ")\nPolarisation: %d (", LR.pol);
 
-    if (LR.pol == 0) fprintf(fd2, "Horizontal");
+    if (LR.pol == 0) {
+      fprintf(fd2, "Horizontal");
+    }
 
-    if (LR.pol == 1) fprintf(fd2, "Vertical");
+    if (LR.pol == 1) {
+      fprintf(fd2, "Vertical");
+    }
 
     fprintf(fd2, ")\nFraction of Situations: %.1lf%c\n", LR.conf * 100.0, 37);
     fprintf(fd2, "Fraction of Time: %.1lf%c\n", LR.rel * 100.0, 37);
@@ -983,13 +1022,21 @@ void PathReport(struct site source, struct site destination, char *name, char gr
       fprintf(fd2, "\nReceiver gain: %.1f dBd / %.1f dBi\n", rxGain, rxGain + 2.14);
       fprintf(fd2, "Transmitter ERP plus Receiver gain: ");
 
-      if (LR.erp < 1.0) fprintf(fd2, "%.1lf milliwatts", 1000.0 * LR.erp);
+      if (LR.erp < 1.0) {
+        fprintf(fd2, "%.1lf milliwatts", 1000.0 * LR.erp);
+      }
 
-      if (LR.erp >= 1.0 && LR.erp < 10.0) fprintf(fd2, "%.1lf Watts", LR.erp);
+      if (LR.erp >= 1.0 && LR.erp < 10.0) {
+        fprintf(fd2, "%.1lf Watts", LR.erp);
+      }
 
-      if (LR.erp >= 10.0 && LR.erp < 10.0e3) fprintf(fd2, "%.0lf Watts", LR.erp);
+      if (LR.erp >= 10.0 && LR.erp < 10.0e3) {
+        fprintf(fd2, "%.0lf Watts", LR.erp);
+      }
 
-      if (LR.erp >= 10.0e3) fprintf(fd2, "%.3lf kilowatts", LR.erp / 1.0e3);
+      if (LR.erp >= 10.0e3) {
+        fprintf(fd2, "%.3lf kilowatts", LR.erp / 1.0e3);
+      }
 
       dBm = 10.0 * (log10(LR.erp * 1000.0));
       fprintf(fd2, " (%+.2f dBm)\n", dBm);
@@ -1001,13 +1048,21 @@ void PathReport(struct site source, struct site destination, char *name, char gr
 
       eirp = LR.erp * 1.636816521;
 
-      if (eirp < 1.0) fprintf(fd2, "%.1lf milliwatts", 1000.0 * eirp);
+      if (eirp < 1.0) {
+        fprintf(fd2, "%.1lf milliwatts", 1000.0 * eirp);
+      }
 
-      if (eirp >= 1.0 && eirp < 10.0) fprintf(fd2, "%.1lf Watts", eirp);
+      if (eirp >= 1.0 && eirp < 10.0) {
+        fprintf(fd2, "%.1lf Watts", eirp);
+      }
 
-      if (eirp >= 10.0 && eirp < 10.0e3) fprintf(fd2, "%.0lf Watts", eirp);
+      if (eirp >= 10.0 && eirp < 10.0e3) {
+        fprintf(fd2, "%.0lf Watts", eirp);
+      }
 
-      if (eirp >= 10.0e3) fprintf(fd2, "%.3lf kilowatts", eirp / 1.0e3);
+      if (eirp >= 10.0e3) {
+        fprintf(fd2, "%.3lf kilowatts", eirp / 1.0e3);
+      }
 
       dBm = 10.0 * (log10(eirp * 1000.0));
       fprintf(fd2, " (%+.2f dBm)\n", dBm);
@@ -1018,16 +1073,18 @@ void PathReport(struct site source, struct site destination, char *name, char gr
 
     fprintf(fd2, "\nSummary for the link between %s and %s:\n\n", source.name, destination.name);
 
-    if (patterndB != 0.0)
+    if (patterndB != 0.0) {
       fprintf(fd2, "%s antenna pattern towards %s: %.3f (%.2f dB)\n", source.name, destination.name, pattern, patterndB);
+    }
 
     ReadPath(source, destination); /* source=TX, destination=RX */
 
     /* Copy elevations plus clutter along
        path into the elev[] array. */
 
-    for (x = 1; x < path.length - 1; x++)
+    for (x = 1; x < path.length - 1; x++) {
       elev[x + 2] = METERS_PER_FOOT * (path.elevation[x] == 0.0 ? path.elevation[x] : (clutter + path.elevation[x]));
+    }
 
     /* Copy ending points without clutter */
 
@@ -1072,7 +1129,9 @@ void PathReport(struct site source, struct site destination, char *name, char gr
              what it would be if the angles themselves
              were compared. */
 
-          if (cos_xmtr_angle >= cos_test_angle) block = 1;
+          if (cos_xmtr_angle >= cos_test_angle) {
+            block = 1;
+          }
         }
 
         /* At this point, we have the elevation angle
@@ -1147,10 +1206,11 @@ void PathReport(struct site source, struct site destination, char *name, char gr
                              loss, strmode, errnum);
       }
 
-      if (block)
+      if (block) {
         elevation = ((acos(cos_test_angle)) / DEG2RAD) - 90.0;
-      else
+      } else {
         elevation = ((acos(cos_xmtr_angle)) / DEG2RAD) - 90.0;
+      }
 
       /* Integrate the antenna's radiation
          pattern into the overall path loss. */
@@ -1167,14 +1227,19 @@ void PathReport(struct site source, struct site destination, char *name, char gr
         }
       }
 
-      else
+      else {
         patterndB = 0.0;
+      }
 
       total_loss = loss - patterndB;
 
-      if (total_loss > maxloss) maxloss = total_loss;
+      if (total_loss > maxloss) {
+        maxloss = total_loss;
+      }
 
-      if (total_loss < minloss) minloss = total_loss;
+      if (total_loss < minloss) {
+        minloss = total_loss;
+      }
     }
 
     distance = Distance(source, destination);
@@ -1196,9 +1261,13 @@ void PathReport(struct site source, struct site destination, char *name, char gr
       return;
     }
 
-    if (free_space_loss != 0.0) fprintf(fd2, "Attenuation due to terrain shielding: %.2f dB\n", loss - free_space_loss);
+    if (free_space_loss != 0.0) {
+      fprintf(fd2, "Attenuation due to terrain shielding: %.2f dB\n", loss - free_space_loss);
+    }
 
-    if (patterndB != 0.0) fprintf(fd2, "Total path loss including %s antenna pattern: %.2f dB\n", source.name, total_loss);
+    if (patterndB != 0.0) {
+      fprintf(fd2, "Total path loss including %s antenna pattern: %.2f dB\n", source.name, total_loss);
+    }
 
     if (LR.erp != 0.0) {
       field_strength = (139.4 + (20.0 * log10(LR.frq_mhz)) - total_loss) + (10.0 * log10(LR.erp / 1000.0));
@@ -1275,8 +1344,9 @@ void PathReport(struct site source, struct site destination, char *name, char gr
       y = strlen(name);
       strncpy(basename, name, 254);
 
-      for (x = y - 1; x > 0 && name[x] != '.'; x--)
+      for (x = y - 1; x > 0 && name[x] != '.'; x--) {
         ;
+      }
 
       if (x > 0) { /* Extension found */
         for (z = x + 1; z <= y && (z - (x + 1)) < 10; z++) {
@@ -1298,11 +1368,12 @@ void PathReport(struct site source, struct site destination, char *name, char gr
     /* Either .ps or .postscript may be used
        as an extension for postscript output. */
 
-    if (strncmp(term, "postscript", 10) == 0)
+    if (strncmp(term, "postscript", 10) == 0) {
       strncpy(ext, "ps\0", 3);
 
-    else if (strncmp(ext, "ps", 2) == 0)
+    } else if (strncmp(ext, "ps", 2) == 0) {
       strncpy(term, "postscript enhanced color\0", 26);
+    }
 
     fd = fopen("ppa.gp", "w");
 
@@ -1313,17 +1384,19 @@ void PathReport(struct site source, struct site destination, char *name, char gr
     fprintf(fd, "set title \"Path Loss Profile Along Path Between %s and %s (%.2f%c azimuth)\"\n", destination.name,
             source.name, Azimuth(destination, source), 176);
 
-    if (metric)
+    if (metric) {
       fprintf(fd, "set xlabel \"Distance Between %s and %s (%.2f kilometers)\"\n", destination.name, source.name,
               KM_PER_MILE * Distance(destination, source));
-    else
+    } else {
       fprintf(fd, "set xlabel \"Distance Between %s and %s (%.2f miles)\"\n", destination.name, source.name,
               Distance(destination, source));
+    }
 
-    if (got_azimuth_pattern || got_elevation_pattern)
+    if (got_azimuth_pattern || got_elevation_pattern) {
       fprintf(fd, "set ylabel \"Total Path Loss (including TX antenna pattern) (dB)");
-    else
+    } else {
       fprintf(fd, "set ylabel \"Longley-Rice Path Loss (dB)");
+    }
 
     fprintf(fd, "\"\nset output \"%s.%s\"\n", basename, ext);
     fprintf(fd, "plot \"profile.gp\" title \"Path Loss\" with lines\n");
@@ -1341,8 +1414,9 @@ void PathReport(struct site source, struct site destination, char *name, char gr
 
     }
 
-    else
+    else {
       fprintf(stderr, "\n*** ERROR: Error occurred invoking gnuplot!\n");
+    }
   }
 }
 
@@ -1393,7 +1467,9 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
   strcat(fresnel60name, "_fresnel60\0");
 
   fd = fopen(profilename, "wb");
-  if (clutter > 0.0) fd1 = fopen(cluttername, "wb");
+  if (clutter > 0.0) {
+    fd1 = fopen(cluttername, "wb");
+  }
   fd2 = fopen(referencename, "wb");
   fd5 = fopen(curvaturename, "wb");
 
@@ -1407,7 +1483,9 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
     remote.lon = path.lon[x];
     remote.alt = 0.0;
     terrain = GetElevation(remote);
-    if (x == 0) terrain += destination.alt; /* RX antenna spike */
+    if (x == 0) {
+      terrain += destination.alt; /* RX antenna spike */
+    }
 
     a = terrain + earthradius;
     cangle = FEET_PER_MILE * Distance(destination, remote) / earthradius;
@@ -1439,17 +1517,19 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
       }
     }
 
-    else
+    else {
       r = 0.0;
+    }
 
     if (metric) {
       if (METERS_PER_FOOT * height > 0) {
         fprintf(fd, "%.3f %.3f\n", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * height);
       }
 
-      if (fd1 != nullptr && x > 0 && x < path.length - 2)
+      if (fd1 != nullptr && x > 0 && x < path.length - 2) {
         fprintf(fd1, "%.3f %.3f\n", KM_PER_MILE * path.distance[x],
                 METERS_PER_FOOT * (terrain == 0.0 ? height : (height + clutter)));
+      }
 
       fprintf(fd2, "%.3f %.3f\n", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * r);
       fprintf(fd5, "%.3f %.3f\n", KM_PER_MILE * path.distance[x], METERS_PER_FOOT * (height - terrain));
@@ -1459,8 +1539,9 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
     else {
       fprintf(fd, "%.3f %.3f\n", path.distance[x], height);
 
-      if (fd1 != nullptr && x > 0 && x < path.length - 2)
+      if (fd1 != nullptr && x > 0 && x < path.length - 2) {
         fprintf(fd1, "%.3f %.3f\n", path.distance[x], (terrain == 0.0 ? height : (height + clutter)));
+      }
 
       fprintf(fd2, "%.3f %.3f\n", path.distance[x], r);
       fprintf(fd5, "%.3f %.3f\n", path.distance[x], height - terrain);
@@ -1477,24 +1558,37 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
         fprintf(fd4, "%.3f %.3f\n", path.distance[x], fpt6_zone);
       }
 
-      if (f_zone < minheight) minheight = f_zone;
+      if (f_zone < minheight) {
+        minheight = f_zone;
+      }
     }
 
-    if ((height + clutter) > maxheight) maxheight = height + clutter;
+    if ((height + clutter) > maxheight) {
+      maxheight = height + clutter;
+    }
 
-    if (height < minheight) minheight = height;
+    if (height < minheight) {
+      minheight = height;
+    }
 
-    if (r > maxheight) maxheight = r;
+    if (r > maxheight) {
+      maxheight = r;
+    }
 
-    if (terrain < minterrain) minterrain = terrain;
+    if (terrain < minterrain) {
+      minterrain = terrain;
+    }
 
-    if ((height - terrain) < minearth) minearth = height - terrain;
+    if ((height - terrain) < minearth) {
+      minearth = height - terrain;
+    }
   }  // End of loop
 
-  if (normalised)
+  if (normalised) {
     r = -(nm * path.distance[path.length - 1]) - nb;
-  else
+  } else {
     r = 0.0;
+  }
 
   if (metric) {
     fprintf(fd, "%.3f %.3f", KM_PER_MILE * path.distance[path.length - 1], METERS_PER_FOOT * r);
@@ -1518,13 +1612,19 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
     }
   }
 
-  if (r > maxheight) maxheight = r;
+  if (r > maxheight) {
+    maxheight = r;
+  }
 
-  if (r < minheight) minheight = r;
+  if (r < minheight) {
+    minheight = r;
+  }
 
   fclose(fd);
 
-  if (fd1 != nullptr) fclose(fd1);
+  if (fd1 != nullptr) {
+    fclose(fd1);
+  }
 
   fclose(fd2);
   fclose(fd5);
@@ -1545,8 +1645,9 @@ void SeriesData(struct site source, struct site destination, char *name, unsigne
     y = strlen(name);
     strncpy(basename, name, 254);
 
-    for (x = y - 1; x > 0 && name[x] != '.'; x--)
+    for (x = y - 1; x > 0 && name[x] != '.'; x--) {
       ;
+    }
 
     if (x > 0) {
       for (z = x + 1; z <= y && (z - (x + 1)) < 10; z++) {

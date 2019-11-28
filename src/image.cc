@@ -33,10 +33,18 @@ int image_init(image_ctx_t *ctx, const std::size_t width, const std::size_t heig
   image_dispatch_table_t *dt;
 
   /* Perform some sanity checking on provided arguments */
-  if (ctx == nullptr) return EINVAL;
-  if (width == 0 || height == 0) return EINVAL;
-  if (model < 0 || model > IMAGE_MODEL_MAX) return EINVAL;
-  if (format >= IMAGE_FORMAT_MAX || (format == IMAGE_LIBRARY && dynamic_backend == nullptr)) return EINVAL;
+  if (ctx == nullptr) {
+    return EINVAL;
+  }
+  if (width == 0 || height == 0) {
+    return EINVAL;
+  }
+  if (model < 0 || model > IMAGE_MODEL_MAX) {
+    return EINVAL;
+  }
+  if (format >= IMAGE_FORMAT_MAX || (format == IMAGE_LIBRARY && dynamic_backend == nullptr)) {
+    return EINVAL;
+  }
 
   memset(ctx, 0x00, sizeof(image_ctx_t));
 
@@ -44,10 +52,11 @@ int image_init(image_ctx_t *ctx, const std::size_t width, const std::size_t heig
   ctx->width = width;
   ctx->height = height;
   ctx->model = model;
-  if (format == IMAGE_DEFAULT)
+  if (format == IMAGE_DEFAULT) {
     ctx->format = default_format;
-  else
+  } else {
     ctx->format = format;
+  }
 
   /* Get the dispatch table for this image format */
   dt = (image_dispatch_table_t *)calloc(1, sizeof(image_dispatch_table_t));
@@ -82,19 +91,27 @@ int image_init(image_ctx_t *ctx, const std::size_t width, const std::size_t heig
  * These functions simply wrap the underlying format-specific functions
  */
 int image_add_pixel(image_ctx_t *ctx, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) {
-  if (ctx->initialized != 1) return EINVAL;
+  if (ctx->initialized != 1) {
+    return EINVAL;
+  }
   return DISPATCH_TABLE(ctx)->add_pixel(ctx, r, g, b, a);
 }
 int image_write(image_ctx_t *ctx, FILE *fd) {
-  if (ctx->initialized != 1) return EINVAL;
+  if (ctx->initialized != 1) {
+    return EINVAL;
+  }
   return DISPATCH_TABLE(ctx)->write(ctx, fd);
 }
 void image_free(image_ctx_t *ctx) {
-  if (ctx->initialized != 1) return;
+  if (ctx->initialized != 1) {
+    return;
+  }
   if (DISPATCH_TABLE(ctx)->free != nullptr) {
     DISPATCH_TABLE(ctx)->free(ctx);
   }
-  if (ctx->canvas != nullptr) free(ctx->canvas);
+  if (ctx->canvas != nullptr) {
+    free(ctx->canvas);
+  }
 }
 
 /*
@@ -108,7 +125,9 @@ int image_get_filename(image_ctx_t *ctx, char *out, std::size_t len_out, char *i
   std::size_t len_ext;
   int success = 0;
 
-  if (ctx->initialized != 1) return EINVAL;
+  if (ctx->initialized != 1) {
+    return EINVAL;
+  }
 
   /* Get various lengths */
   len_src = strlen(in);
@@ -121,17 +140,19 @@ int image_get_filename(image_ctx_t *ctx, char *out, std::size_t len_out, char *i
 
   if (len_src > len_ext && strcmp(in + len_src - len_ext, ctx->extension) == 0) {
     /* Already has correct extension and fits in buffer */
-    if (len_src < len_out)
+    if (len_src < len_out) {
       strncpy(in, out, len_out);
-    else
+    } else {
       success = ENOMEM;
+    }
   } else if (len_src > len_ext) {
     /* Doesn't have correct extension and fits */
     if (len_src + len_ext < len_out) {
       strncpy(out, in, len_out);
       strncat(out, ctx->extension, len_out);
-    } else
+    } else {
       success = ENOMEM;
+    }
   } else {
     /* The input buffer plus an extension cannot fit in the output buffer */
     fprintf(stderr, "Error building image output filename\n");
@@ -179,7 +200,9 @@ int image_set_library(char *library) {
 
   length = strlen(library) + 1;
   libname = (char *)calloc(length, sizeof(char));
-  if (libname == nullptr) return ENOMEM;
+  if (libname == nullptr) {
+    return ENOMEM;
+  }
   strncpy(libname, library, length);
 
   dynamic_backend = libname;

@@ -6,7 +6,9 @@ int ppm_init(image_ctx_t *ctx) {
   size_t buf_size;
 
   /* Perform simple sanity checking */
-  if (ctx->canvas != nullptr) return EINVAL;
+  if (ctx->canvas != nullptr) {
+    return EINVAL;
+  }
   ctx->model = IMAGE_RGB;  // Override this as we only support RGB
   ctx->format = IMAGE_PPM;
   ctx->extension = (char *)".ppm";
@@ -16,7 +18,9 @@ int ppm_init(image_ctx_t *ctx) {
   /* Allocate the canvas buffer */
   ctx->canvas = (uint8_t *)calloc(buf_size, sizeof(uint8_t));
   ctx->next_pixel = ctx->canvas;
-  if (ctx->canvas == nullptr) return ENOMEM;
+  if (ctx->canvas == nullptr) {
+    return ENOMEM;
+  }
 
   return 0;
 }
@@ -49,7 +53,9 @@ int ppm_write(image_ctx_t *ctx, FILE *fd) {
 
   fprintf(fd, "P6\n%zu %zu\n255\n", ctx->width, ctx->height);
   written = fwrite(ctx->canvas, sizeof(uint8_t), count, fd);
-  if (written < count) return EPIPE;
+  if (written < count) {
+    return EPIPE;
+  }
 
   return 0;
 }
