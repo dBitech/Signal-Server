@@ -20,6 +20,6 @@ int loadLIDAR(char *filename, int resample);
 int loadClutter(char *filename, double radius, struct site tx);
 int averageHeight(int h, int w, int x, int y);
 static const char AZ_FILE_SUFFIX[] = ".az";
-static const char EL_FILE_SUFFIX[] = ".el"; 
+static const char EL_FILE_SUFFIX[] = ".el";
 
 #endif /* _INPUTS_HH_ */
