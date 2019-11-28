@@ -225,7 +225,7 @@ int loadLIDAR(char *filenames, int resample) {
     if (min_north == 90 || tiles[indx].min_north < min_north) min_north = tiles[indx].min_north;
 
     // Meridian switch. max_west=0
-    if (abs(tiles[indx].max_west - max_west) < 180 || tiles[indx].max_west < 360) {
+    if (std::abs(tiles[indx].max_west - max_west) < 180 || tiles[indx].max_west < 360) {
       if (tiles[indx].max_west > max_west) max_west = tiles[indx].max_west;  // update highest value
     } else {
       if (tiles[indx].max_west < max_west) max_west = tiles[indx].max_west;
@@ -617,7 +617,7 @@ int LoadSDF_SDF(const char *name) {
       max_west = dem[indx].max_west;
 
     else {
-      if (abs(dem[indx].max_west - max_west) < 180) {
+      if (std::abs(dem[indx].max_west - max_west) < 180) {
         if (dem[indx].max_west > max_west) max_west = dem[indx].max_west;
       } else {
         if (dem[indx].max_west < max_west) max_west = dem[indx].max_west;
@@ -836,7 +836,7 @@ int LoadSDF_BZ(const char *name) {
       max_west = dem[indx].max_west;
 
     else {
-      if (abs(dem[indx].max_west - max_west) < 180) {
+      if (std::abs(dem[indx].max_west - max_west) < 180) {
         if (dem[indx].max_west > max_west) max_west = dem[indx].max_west;
       } else {
         if (dem[indx].max_west < max_west) max_west = dem[indx].max_west;
@@ -1084,7 +1084,7 @@ int LoadSDF_GZ(const char *name) {
       max_west = dem[indx].max_west;
 
     else {
-      if (abs(dem[indx].max_west - max_west) < 180) {
+      if (std::abs(dem[indx].max_west - max_west) < 180) {
         if (dem[indx].max_west > max_west) max_west = dem[indx].max_west;
       } else {
         if (dem[indx].max_west < max_west) max_west = dem[indx].max_west;
@@ -1199,7 +1199,7 @@ int LoadSDF(const char *name) {
         max_west = dem[indx].max_west;
 
       else {
-        if (abs(dem[indx].max_west - max_west) < 180) {
+        if (std::abs(dem[indx].max_west - max_west) < 180) {
           if (dem[indx].max_west > max_west) max_west = dem[indx].max_west;
         } else {
           if (dem[indx].max_west < max_west) max_west = dem[indx].max_west;
@@ -1210,7 +1210,7 @@ int LoadSDF(const char *name) {
         min_west = dem[indx].min_west;
 
       else {
-        if (abs(dem[indx].min_west - min_west) < 180) {
+        if (std::abs(dem[indx].min_west - min_west) < 180) {
           if (dem[indx].min_west < min_west) min_west = dem[indx].min_west;
         } else {
           if (dem[indx].min_west > min_west) min_west = dem[indx].min_west;
