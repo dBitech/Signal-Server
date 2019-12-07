@@ -21,8 +21,10 @@
 #define METERS_PER_FOOT 0.3048
 #define KM_PER_MILE 1.609344
 #define FEET_PER_MILE 5280.0
+#define FEET_PER_METER 3.28084
 #define FOUR_THIRDS 1.3333333333333
 
+// Digital Elevation Model
 struct dem {
   float min_north;
   float max_north;
@@ -31,7 +33,7 @@ struct dem {
   long min_x, max_x, min_y, max_y;
   int max_el;
   int min_el;
-  short **data;
+  short **data;  // elevation in meters
   unsigned char **mask;
   unsigned char **signal;
 };

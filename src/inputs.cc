@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <valarray>
 
 #include "main.hh"
 #include "tiles.hh"
@@ -1661,7 +1662,7 @@ int LoadPAT(const char *az_filename, const char *el_filename) {
 
     sscanf(string, "%f %f", &mechanical_tilt, &tilt_azimuth);
 
-    if (antenna_downtilt != 99.0) {    // If Cmdline override
+    if (antenna_downtilt != 99.0) {      // If Cmdline override
       if (antenna_dt_direction == -1) {  // dt_dir not specified
         tilt_azimuth = rotation;         // use rotation value
       }
@@ -2005,7 +2006,8 @@ int LoadSignalColors(struct site xmtr) {
 }
 
 int LoadLossColors(struct site xmtr) {
-  int x, y, ok, val[4];
+  int x, ok;
+  std::valarray<int> val(4);
   char filename[255], string[80], *pointer = nullptr, *s;
   FILE *fd = nullptr;
 
@@ -2157,15 +2159,7 @@ int LoadLossColors(struct site xmtr) {
           fflush(stderr);
         }
 
-        for (y = 0; y < 4; y++) {
-          if (val[y] > 255) {
-            val[y] = 255;
-          }
-
-          if (val[y] < 0) {
-            val[y] = 0;
-          }
-        }
+        val.apply([](int n) { return std::clamp(n, 0, 255); });
 
         region.level[x] = val[0];
         region.color[x][0] = val[1];

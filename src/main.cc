@@ -268,7 +268,7 @@ double GetElevation(struct site location) {
   if (found) {
     x = rint(ppd * (location.lat - dem[indx].min_north));
     y = mpi - rint(yppd * (LonDiff(dem[indx].max_west, location.lon)));
-    elevation = 3.28084 * dem[indx].data[x][y];
+    elevation = FEET_PER_METER * dem[indx].data[x][y];
   } else {
     elevation = -5000.0;
   }
