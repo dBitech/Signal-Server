@@ -1,3 +1,5 @@
+**Note: This repo was forked from the CloudRF Signal-Server repo before that repository was deleted sometime in late 2023. Any updates and changes since then will be documented appropriately.**
+
 # Signal Server
 Multi-threaded radio propagation simulator based upon SPLAT! by Alex Farrant QCVS, 2E0TDW. 
 
@@ -59,18 +61,19 @@ Additional programs/scripts will be required to prepare inputs such as .hgt tile
 ## Install dependencies
 Assuming Debian / Ubuntu, this will fetch the core libraries needed to build it as well as an image library for manipulating outputs.
 ```
-sudo apt-get install g++ cmake libbz2-dev imagemagick
+sudo apt-get install g++ cmake libbz2-dev imagemagick spdlog
 ```
 
 ## Installation
 Change into the source directory to build the binaries.
 ```
-cd src
-cmake .
+mkdir build
+cd build
+cmake ../src
 make
 ```
 
-## Test
+## Test (needs updating)
 Run the test script from the top level directory. Binaries are in the src directory.
 Test output will be in output/tests
 ```
@@ -79,14 +82,17 @@ Test output will be in output/tests
 
 ## Parameters
 ```
-Version: Signal Server 3.3 (Built for 100 DEM tiles at 1200 pixels)
+----------------------------------------------------------------------------------
+Signal Server 4.0 (master c1e8c72)
+    Compile date: Jul  1 2024 01:05:46
+    Built for 32 DEM tiles at 3600 pixels
+----------------------------------------------------------------------------------
 License: GNU General Public License (GPL) version 2
 
 Radio propagation simulator by Alex Farrant QCVS, 2E0TDW
 Based upon SPLAT! by John Magliacane, KD2BD
 Some feature enhancements/additions by Aaron A. Collins, N9OZB
-                                       Tom Hayward, KD7LXL
-                                       Darcy Buskermolen, VA7DBI
+Additional improvements and multithreading fixes by P. McDonnell, W3AXL
 
 Usage: signalserver [data options] [input options] [antenna options] [output options] -o outputfile
 
@@ -115,8 +121,9 @@ Input:
      -rel Reliability for ITM model (% of 'time') 1 to 99 (optional, default 50%)
      -conf Confidence for ITM model (% of 'situations') 1 to 99 (optional, default 50%)
      -resample Reduce Lidar resolution by specified factor (2 = 50%)
+     -segments Number of segments to divide the plot rectangle into (must be even and > 4)
 Output:
-     -o basename (Output file basename - required)
+     -o basename (Output file basename - required, min 5 chars)
      -dbm Plot Rxd signal power instead of field strength in dBuV/m
      -rt Rx Threshold (dB / dBm / dBuV/m)
      -R Radius (miles/kilometers)
@@ -141,6 +148,7 @@ Debugging:
      -ng Normalise Path Profile graph
      -haf Halve 1 or 2 (optional)
      -nothreads Turn off threaded processing
+     -rp Use experimental radial processing
 ```
 
 ### REFERENCE DATA
@@ -153,6 +161,9 @@ Signal server is designed for most of the environments and climates on Planet Ea
 SDF formatted tiles can be created by converting SRTM tiles (30m or 90m) in HGT format with the srtm2sdf or srtm2sdf-hd utility. At the time of writing these tiles can be obtained for free from the [Viewfinder Panoramas website](http://viewfinderpanoramas.org/dem3.html).
 
 Note these can be compressed using gzip or bzip2 if desired to save disk space and speed up loading the files.  For hi-res (HD) SRTM1 (30m) data, bzip2 compresses best, and for lo-res SRTM3 (90m) data, gzip seems to achieve the best compression.  Either will work fine for whichever data format and resolution is used.
+
+##### WARNING - BREAKING CHANGES
+Since 1st Oct 2023, .sdf filenames have been reformatted to address issue #35, replacing colons with underscores to enable compatibility with Python etc. The conversion utility has been updated so .hgt files may require reprocessing, or you can just rename files to replace : with _.
 
 
 #### -lid 

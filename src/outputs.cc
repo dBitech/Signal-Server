@@ -6,9 +6,12 @@
 #include <bzlib.h>
 #include <zlib.h>
 
+#include <spdlog/spdlog.h>
+
 #include "common.hh"
 #include "main.hh"
 #include "inputs.hh"
+#include "models/los.hh"
 #include "models/cost.hh"
 #include "models/ecc33.hh"
 #include "models/ericsson.hh"
@@ -37,7 +40,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if( (success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0 ){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		spdlog::error("Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -47,7 +50,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 			one_over_gamma);
 
 	if( (success = LoadLossColors(xmtr[0])) != 0 ){
-		fprintf(stderr,"Error loading loss colors\n");
+		spdlog::error("Error loading loss colors");
 		exit(success);  // Now a fatal error!
 	}
 
@@ -59,7 +62,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			spdlog::error("Error creating file name");
 			exit(1);
 		}
 
@@ -67,7 +70,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 
 	} else {
 
-		fprintf(stderr,"Writing to stdout\n");
+		spdlog::info("Writing to stdout");
 		fd = stdout;
 
 	}
@@ -87,11 +90,8 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
-	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
+	spdlog::debug("Writing \"{}\" ({} x {} pixmap image)...",
 			filename != NULL ? mapfile : "to stdout", width, (kml ? height : height + 30));
-		fflush(stderr);
-	}
 
 	for (y = 0, lat = north; y < (int)height;
 	     y++, lat = north - (dpp * (double)y)) {
@@ -248,7 +248,7 @@ void DoPathLoss(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		spdlog::error("Error writing image");
 		exit(success);
 	}
 
@@ -280,7 +280,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if((success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		spdlog::error("Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -290,7 +290,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 			one_over_gamma);
 
 	if( (success = LoadSignalColors(xmtr[0])) != 0 ){
-		fprintf(stderr,"Error loading signal colors\n");
+		spdlog::error("Error loading signal colors");
 		//exit(success);
 	}
 
@@ -302,7 +302,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			spdlog::error("Error creating file name");
 			exit(1);
 		}
 
@@ -310,7 +310,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 
 	} else {
 
-		fprintf(stderr,"Writing to stdout\n");
+		spdlog::info("Writing to stdout");
 		fd = stdout;
 
 	}
@@ -327,11 +327,8 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
-	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
+	spdlog::debug("Writing \"{}\" ({} x {} pixmap image)...",
 			filename != NULL ? mapfile : "to stdout", width, (kml ? height : height + 30));
-		fflush(stderr);
-	}
 
 	for (y = 0, lat = north; y < (int)height;
 	     y++, lat = north - (dpp * (double)y)) {
@@ -499,7 +496,7 @@ int DoSigStr(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		spdlog::error("Error writing image");
 		exit(success);
 	}
 
@@ -531,7 +528,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if( (success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0 ){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		spdlog::error("Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -541,7 +538,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 			one_over_gamma);
 
 	if( (success = LoadDBMColors(xmtr[0])) != 0 ){
-		fprintf(stderr,"Error loading DBM colors\n");
+		spdlog::error("Error loading DBM colors");
 		exit(success);  //Now a fatal error!
 	}
 
@@ -553,7 +550,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			spdlog::error("Error creating file name");
 			exit(1);
 		}
 
@@ -561,7 +558,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 
 	} else {
 
-		fprintf(stderr,"Writing to stdout\n");
+		spdlog::info("Writing to stdout");
 		fd = stdout;
 
 	}
@@ -578,11 +575,8 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
-	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
+	spdlog::debug("Writing \"{}\" ({} x {} pixmap image)...",
 			(filename != NULL ? mapfile : "to stdout"), width, (kml ? height : height));
-		fflush(stderr);
-	}
 
 	// Draw image of x by y pixels
 	for (y = 0, lat = north; y < (int)height;
@@ -743,7 +737,7 @@ void DoRxdPwr(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		spdlog::error("Error writing image");
 		exit(success);
 	}
 
@@ -777,7 +771,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	int success;
 
 	if((success = image_init(&ctx, width, (kml ? height : height + 30), IMAGE_RGB, IMAGE_DEFAULT)) != 0){
-		fprintf(stderr,"Error initializing image: %s\n", strerror(success));
+		spdlog::error("Error initializing image: {}", strerror(success));
 		exit(success);
 	}
 
@@ -794,7 +788,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 		}
 
 		if(image_get_filename(&ctx,mapfile,sizeof(mapfile),filename) != 0){
-			fprintf(stderr,"Error creating file name\n");
+			spdlog::error("Error creating file name");
 			exit(1);
 		}
 
@@ -802,7 +796,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 
 	} else {
 		
-		fprintf(stderr,"Writing to stdout\n");
+		spdlog::info("Writing to stdout");
 		fd = stdout;
 
 	}
@@ -819,11 +813,8 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	east = (minwest < 180.0 ? -minwest : 360.0 - min_west);
 	west = (double)(max_west < 180 ? -max_west : 360 - max_west);
 
-	if (debug) {
-		fprintf(stderr, "\nWriting \"%s\" (%ux%u pixmap image)...\n",
+	spdlog::debug("Writing \"{}\" ({} x {} pixmap image)...\n",
 			filename != NULL ? mapfile : "to stdout", width, (kml ? height : height + 30));
-		fflush(stderr);
-	}
 
 	for (y = 0, lat = north; y < (int)height;
 	     y++, lat = north - (dpp * (double)y)) {
@@ -989,7 +980,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 	}
 
 	if((success = image_write(&ctx,fd)) != 0){
-		fprintf(stderr,"Error writing image\n");
+		spdlog::error("Error writing image");
 		exit(success);
 	}
 
@@ -1003,7 +994,7 @@ void DoLOS(char *filename, unsigned char geo, unsigned char kml,
 }
 
 void PathReport(struct site source, struct site destination, char *name,
-		char graph_it, int propmodel, int pmenv, double rxGain)
+		char graph_it, PropModel propmodel, int pmenv, double rxGain)
 {
 	/* This function writes a PPA Path Report (name.txt) to
 	   the filesystem.  If (graph_it == 1), then gnuplot is invoked
@@ -1541,11 +1532,11 @@ void PathReport(struct site source, struct site destination, char *name,
 		fprintf(fd2, "Computed path loss: %.2f dB\n", loss);
 
 
-                if((loss*1.5) < free_space_loss){
+        if((loss*1.5) < free_space_loss){
 			fprintf(fd2,"Model error! Computed loss of %.1fdB is greater than free space loss of %.1fdB. Check your inuts for model %d\n",loss,free_space_loss,propmodel);
-                        fprintf(stderr,"Model error! Computed loss of %.1fdB is greater than free space loss of %.1fdB. Check your inuts for model %d\n",loss,free_space_loss,propmodel);
-                        return;
-                }
+            spdlog::error("Model error! Computed loss of {:.1f} dB is greater than free space loss of {:.1f} dB. Check your inuts for model {}",loss,free_space_loss,propmodel);
+            return;
+        }
 
 		if (free_space_loss != 0.0)
 			fprintf(fd2,
@@ -1644,9 +1635,7 @@ void PathReport(struct site source, struct site destination, char *name,
 	ObstructionAnalysis(source, destination, LR.frq_mhz, fd2);
 	fclose(fd2);
 
-	fprintf(stderr,
-		"Path loss (dB), Received Power (dBm), Field strength (dBuV):\n%.1f\n%.1f\n%.1f",
-		loss, dBm, field_strength);
+	spdlog::debug("Path loss: {:.1f} dB, Received Power: {:.1f} dBm, Field strength {:.1f} dBuV", loss, dBm, field_strength);
 
 	/* Skip plotting the graph if ONLY a path-loss report is needed. */
 
@@ -1741,8 +1730,7 @@ void PathReport(struct site source, struct site destination, char *name,
 		}
 
 		else
-			fprintf(stderr,
-				"\n*** ERROR: Error occurred invoking gnuplot!\n");
+			spdlog::error("Error occurred invoking gnuplot!");
 	}
 
 }
@@ -1769,10 +1757,7 @@ void SeriesData(struct site source, struct site destination, char *name,
 	refangle = ElevationAngle(destination, source);
 	b = GetElevation(destination) + destination.alt + earthradius;
 
-	if (debug) {
-	        fprintf(stderr, "SeriesData: az = %lf, dist = %lf, ref = %lf, b = %lf\n", azimuth, distance, refangle, b);
-		fflush(stderr);
-	}
+	spdlog::debug("SeriesData: az = {}, dist = {}, ref = {}, b = {}", azimuth, distance, refangle, b);
 	
 	if (fresnel_plot) {
 		lambda = 9.8425e8 / (LR.frq_mhz * 1e6);
@@ -2017,8 +2002,4 @@ void SeriesData(struct site source, struct site destination, char *name,
 			strncpy(ext, "png\0", 4);
 		}
 	}
-
-	fprintf(stderr, "\n");
-	fflush(stderr);
-
 }

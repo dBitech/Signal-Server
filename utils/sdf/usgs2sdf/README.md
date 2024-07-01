@@ -6,6 +6,10 @@ Utilities for use with SPLAT! software are found under the
 /utils directory.  They include the following:
 
 
+## BUILD
+	cmake .
+	make
+
 srtm2sdf
 ========
 The srtm2sdf utility generates Data Files (SDFs) for use with Signal-Server

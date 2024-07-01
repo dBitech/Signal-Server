@@ -19,6 +19,20 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Get GIT commit branch & hash
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 # Prepare internal libraries search
 include_directories(models)
 
@@ -28,6 +42,7 @@ add_library(image-ppm STATIC image-ppm.cc)
 add_library(inputs STATIC inputs.cc)
 add_library(outputs STATIC outputs.cc)
 add_library(tiles STATIC tiles.cc)
+add_library(geo STATIC geo.cc)
 
 add_library(cost STATIC models/cost.cc)
 add_library(ecc33 STATIC models/ecc33.cc)
@@ -47,9 +62,30 @@ find_library(dl dl)
 find_library(pthread pthread)
 find_library(z z)
 
+# Spdlog
+find_package(spdlog REQUIRED)
+
 add_executable(signalserver main.cc)
 add_executable(signalserverHD main.cc)
 add_executable(signalserverLIDAR main.cc)
+
+target_compile_definitions(
+    signalserver PRIVATE
+    "-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\""
+    "-DGIT_BRANCH=\"${GIT_BRANCH}\""
+)
+
+target_compile_definitions(
+    signalserverHD PRIVATE
+    "-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\""
+    "-DGIT_BRANCH=\"${GIT_BRANCH}\""
+)
+
+target_compile_definitions(
+    signalserverLIDAR PRIVATE
+    "-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\""
+    "-DGIT_BRANCH=\"${GIT_BRANCH}\""
+)
 
 target_link_libraries(signalserver 
 			PUBLIC image
@@ -72,6 +108,8 @@ target_link_libraries(signalserver
 			PUBLIC dl
 			PUBLIC pthread
 			PUBLIC z
+            PUBLIC spdlog::spdlog
+            PUBLIC geo
 		  )
 
 target_link_libraries(signalserverHD 
@@ -95,6 +133,8 @@ target_link_libraries(signalserverHD
 			PUBLIC dl
 			PUBLIC pthread
 			PUBLIC z
+            PUBLIC spdlog::spdlog
+            PUBLIC geo
 		  )
 
 target_link_libraries(signalserverLIDAR 
@@ -118,6 +158,8 @@ target_link_libraries(signalserverLIDAR
 			PUBLIC dl
 			PUBLIC pthread
 			PUBLIC z
+            PUBLIC spdlog::spdlog
+            PUBLIC geo
 		  )
 
 # INSTALL target (make install)

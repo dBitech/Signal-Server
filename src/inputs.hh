@@ -18,7 +18,7 @@ int LoadPAT(char *az_filename, char *el_filename);
 int LoadSignalColors(struct site xmtr);
 int LoadLossColors(struct site xmtr);
 int LoadDBMColors(struct site xmtr);
-int LoadTopoData(double max_lon, double min_lon, double max_lat, double min_lat);
+int LoadTopoData(bbox region);
 int LoadUDT(char *filename);
 int loadLIDAR(char *filename, int resample);
 int loadClutter(char *filename, double radius, struct site tx);

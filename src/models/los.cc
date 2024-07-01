@@ -12,72 +12,21 @@
 #include "pel.hh"
 #include "egli.hh"
 #include "soil.hh"
-#include <pthread.h>
-
-#define NUM_SECTIONS 4
+#include "../geo.hh"
+#include <thread>
+#include <mutex>
+#include <spdlog/spdlog.h>
+#include <vector>
+#include <limits.h>
 
 namespace {
-	pthread_t threads[NUM_SECTIONS];
-	unsigned int thread_count = 0;
-	pthread_mutex_t maskMutex;
+	std::vector<std::thread> threads;
+    std::mutex maskMutex;
 	bool ***processed;
 	bool has_init_processed = false;
 
-	struct propagationRange {
-		double min_west, max_west, min_north, max_north;
-		double altitude;
-		bool eastwest, los, use_threads;
-		site source;
-		unsigned char mask_value;
-		FILE *fd;
-		int propmodel, knifeedge, pmenv;
-	};
-
-	void* rangePropagation(void *parameters)
-	{
-		propagationRange *v = (propagationRange*)parameters;
-		if(v->use_threads) {
-			alloc_elev();
-			alloc_path();
-		}
-
-		double minwest = dpp + (double)v->min_west;
-		double lon = v->eastwest ? minwest : v->min_west;
-		double lat = v->min_north;
-		int y = 0;
-
-		do {
-			if (lon >= 360.0)
-				lon -= 360.0;
-
-			site edge;
-			edge.lat = lat;
-			edge.lon = lon;
-			edge.alt = v->altitude;
-
-			if(v->los)
-				PlotLOSPath(v->source, edge, v->mask_value, v->fd);
-			else
-				PlotPropPath(v->source, edge, v->mask_value, v->fd, v->propmodel,
-					v->knifeedge, v->pmenv);
-
-			++y;
-			if(v->eastwest)
-			lon = minwest + (dpp * (double)y);
-			else
-			lat = (double)v->min_north + (dpp * (double)y);
-
-
-			} while ( v->eastwest 
-				? (LonDiff(lon, (double)v->max_west) <= 0.0)
-				: (lat < (double)v->max_north) );
-
-			if(v->use_threads) {
-				free_elev();
-				free_path();
-		}
-		return NULL;
-	}
+    // We use this to store what points in our plot have already been processed
+    std::vector<std::vector<std::vector<bool>>> processedPoints;
 
 	void init_processed()
 	{
@@ -85,17 +34,25 @@ namespace {
 		int x;
 		int y;
 
-		processed = new bool **[MAXPAGES];
+		/*processed = new bool **[MAXPAGES];
 		for (i = 0; i < MAXPAGES; i++) {
 			processed[i] = new bool *[ippd];
 			for (x = 0; x < ippd; x++)
 				processed[i][x] = new bool [ippd];
-		}
+		}*/
 
+        // Initialize our vector to the correct size (this is ugly but apparently the best way to do this)
+        processedPoints = std::vector<std::vector<std::vector<bool>>>(MAXPAGES, std::vector<std::vector<bool>>(ippd, std::vector<bool>(ippd)));
+
+        spdlog::debug("Initialized processedPoints vector of side {}x{}x{}", MAXPAGES, ippd, ippd);
+
+        // Populate our processedPoints vector with the points to process
 		for (i = 0; i < MAXPAGES; i++) {
 			for (x = 0; x < ippd; x++) {
-				for (y = 0; y < ippd; y++)
-					processed[i][x][y] = false;
+				for (y = 0; y < ippd; y++) {
+                    processedPoints[i][x][y] = false;
+					//processed[i][x][y] = false;
+                } 
 			}
 		}
 
@@ -129,46 +86,163 @@ namespace {
 			check outside a mutex first without worrying about race 
 			conditions. But we must lock the mutex before updating the 
 			value. */
-
-			if(!processed[indx][x][y]) {
-				pthread_mutex_lock(&maskMutex);
-
-				if(!processed[indx][x][y]) {
+			if(!processedPoints[indx][x][y]) {
+				maskMutex.lock();
+				if(!processedPoints[indx][x][y]) {
 					rtn = true;
-					processed[indx][x][y] = true;
+					processedPoints[indx][x][y] = true;
 				}
-
-				pthread_mutex_unlock (&maskMutex);
+				maskMutex.unlock();
 			}
 
 		}
 		return rtn;
 	}
-  
-	void beginThread(void *arg)
-	{
-		if(!has_init_processed)
-			init_processed();
 
-		int rc = pthread_create(&threads[thread_count], NULL, rangePropagation, arg);
-		if (rc)
-			fprintf(stderr,"ERROR; return code from pthread_create() is %d\n", rc);
-		else
-			++thread_count;
+    /**
+     * Calulate a propagation for a specific range
+     * 
+     * @param *parameters parameters object for the propagation range
+    */
+	void* rangePropagation(void *parameters)
+	{
+        // Create propagationRange opbject based on our parameters
+		PropagationRange *v = (PropagationRange*)parameters;
+		if(v->use_threads) {
+			alloc_elev();
+			alloc_path();
+		}
+
+        // Check if we're plotting a single line
+        if (v->min_north == v->max_north && v->min_west == v->max_west) {
+            spdlog::warn("Propagation plot range is a single point!");
+        }
+
+        // If our min & max lon coords are the same, it's a vertical line
+        bool vertical = (v->min_west == v->max_west) ? true : false;
+
+        spdlog::debug("Starting rangePropagation for {} range {:.6f}N {:.6f}W to {:.6f}N {:.6f}W, {:.8f} dpp",
+            vertical ? "vertical" : "horizontal",
+            v->min_north, v->min_west, v->max_north, v->max_west, dpp);
+
+        // Init our varaibles for tracking position over the loop
+        double lat = v->min_north;
+        double lon = v->min_west;
+        int y = 0;
+        // Iterate
+		do {
+			if (lon >= 360.0)
+				lon -= 360.0;
+
+			site edge;
+			edge.lat = lat;
+			edge.lon = lon;
+			edge.alt = v->altitude;
+
+            //spdlog::debug("Plotting propagation path to {:.6f}N {:.6f}W", edge.lat, edge.lon);
+
+			if(v->los)
+				PlotLOSPath(v->source, edge, v->mask_value);
+			else
+				PlotPropPath(v->source, edge, v->mask_value, v->fd, v->prop_model,
+					v->knifeedge, v->pmenv);
+
+			++y;
+			if(vertical) {
+                lat = (double)v->min_north + (dpp * (double)y);
+            } else {
+			    lon = (double)v->min_west + (dpp * (double)y);
+            }
+
+        } while ( vertical ? (lat < (double)v->max_north) : (LonDiff(lon, (double)v->max_west) <= 0.0) );
+
+        if(v->use_threads) {
+            free_elev();
+            free_path();
+		}
+		return NULL;
 	}
 
+    void* radiusPropagation(void *parameters)
+    {
+        // Create a prop radius from our parameters
+        PropagationRadius *r = (PropagationRadius*)parameters;
+
+        // Thread buffer allocation
+        if(r->use_threads) {
+			alloc_elev();
+			alloc_path();
+		}
+
+        // Check if our start & stop angles are the same
+        if (r->start_angle_rad == r->stop_angle_rad)
+        {
+            spdlog::warn("Start & stop angles are the same, this radius segment will be a single line");
+        }
+
+        spdlog::debug("Starting radiusPropagation for range {:.2f} to {:.2f}, {} points, {:.8f} dpp",
+            r->start_angle_rad / DEG2RAD, r->stop_angle_rad / DEG2RAD, r->points, dpp);
+
+        // Get the amount in radians to increment per iteration
+        double rps = (r->stop_angle_rad - r->start_angle_rad) / r->points;
+
+        // Iterate
+        double rad = r->start_angle_rad;
+        for (int i = 0; i < r->points; i++)
+        {
+            // Get coordinates of point on circle
+            coord point = getPointAtDistance({r->source.lat, r->source.lon}, r->radius, rad / DEG2RAD);
+            // Create site for prop path
+            site edge;
+            edge.lat = point.lat;
+            edge.lon = point.lon;
+            edge.alt = r->altitude;
+            // Plot
+            if (r->los)
+                PlotLOSPath(r->source, edge, r->mask_value);
+            else
+                PlotPropPath(r->source, edge, r->mask_value, r->fd, r->prop_model, r->knifeedge, r->pmenv);
+
+            // Increment
+            rad += rps;
+        }
+
+        // Double check we covered the whole range
+        if (rad < (r->stop_angle_rad - 0.01f))
+        {
+            spdlog::warn("Only got to {:.2f} degrees when we expected to get to {:.2f} degrees", rad / DEG2RAD, r->stop_angle_rad / DEG2RAD);
+        }
+
+        // Free the buffers we made earlier
+        if(r->use_threads) {
+            free_elev();
+            free_path();
+		}
+
+        return NULL;
+    }
+  
+	/// @brief Add a new range thread to our threads array
+	/// @param arg arguments for rangePropagation
+	void beginRangeThread(void *arg)
+	{
+		threads.emplace_back(std::thread(rangePropagation, arg));
+	}
+
+    /// @brief Add a new radius thread to our threads array
+    /// @param arg arguments for radiusPropagation
+    void beginRadiusThread(void *arg)
+    {
+        threads.emplace_back(std::thread(radiusPropagation, arg));
+    }
+
+	/// @brief Wait for all threads in our threads array to finish
 	void finishThreads()
 	{
-		void* status;
-		for(unsigned int i=0; i<thread_count; i++) {
-			int rc = pthread_join(threads[i], &status);
-			if (rc)
-				fprintf(stderr,"ERROR; return code from pthread_join() is %d\n", rc);
-		}
-		thread_count = 0;
+        for (auto& th : threads)
+            th.join();
 	}
 }
-
 
 /*
  * Acute Angle from Rx point to an obstacle of height (opp) and
@@ -225,8 +299,7 @@ static double ked(double freq, double rxh, double dkm)
 	}
 }
 
-void PlotLOSPath(struct site source, struct site destination, char mask_value,
-         FILE *fd)
+void PlotLOSPath(struct site source, struct site destination, char mask_value)
 {
     /* This function analyzes the path between the source and
        destination locations. It determines which points along
@@ -339,9 +412,21 @@ void PlotLOSPath(struct site source, struct site destination, char mask_value,
     }
 }
 
-void PlotPropPath(struct site source, struct site destination,
-		  unsigned char mask_value, FILE * fd, int propmodel,
-		  int knifeedge, int pmenv)
+/**
+ * Calculate propagation for the points on a line between two coordinates
+ * 
+ * @param source - the source site object
+ * @param destination - the destination site object
+*/
+void PlotPropPath(
+    struct site source, 
+    struct site destination,
+	unsigned char mask_value, 
+    FILE * fd, 
+    PropModel prop_model,
+	int knifeedge, 
+    int pmenv
+)
 {
 
 	int x, y, ifs, ofs, errnum;
@@ -492,109 +577,118 @@ void PlotPropPath(struct site source, struct site destination,
 
 			dkm = (elev[1] * elev[0]) / 1000;	// km
 
-			switch (propmodel) {
-			case 1:
-				// Longley Rice ITM
-				point_to_point_ITM(source.alt * METERS_PER_FOOT,
-						   destination.alt *
-						   METERS_PER_FOOT,
-						   LR.eps_dielect,
-						   LR.sgm_conductivity,
-						   LR.eno_ns_surfref,
-						   LR.frq_mhz, LR.radio_climate,
-						   LR.pol, LR.conf, LR.rel,
-						   loss, strmode, errnum);
-				break;
-			case 3:
-				//HATA 1, 2 & 3
-				loss =
-				    HATApathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
-						(path.elevation[y] * METERS_PER_FOOT) +	 (destination.alt * METERS_PER_FOOT), dkm, pmenv);
-				break;
-			case 4:
-				// ECC33
-				loss =
-				    ECC33pathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
-						(path.elevation[y] *
-						 METERS_PER_FOOT) +
-						  (destination.alt *
-						   METERS_PER_FOOT), dkm,
-						  pmenv);
-				break;
-			case 5:
-				// SUI
-				loss =
-				    SUIpathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
-						(path.elevation[y] *
-						 METERS_PER_FOOT) +
-						(destination.alt *
-						 METERS_PER_FOOT), dkm, pmenv);
-				break;
-			case 6:
-				// COST231-Hata
-				loss =
-				    COST231pathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
-						(path.elevation[y] *
-						 METERS_PER_FOOT) +
-						    (destination.alt *
-						     METERS_PER_FOOT), dkm,
-						    pmenv);
-				break;
-			case 7:
-				// ITU-R P.525 Free space path loss
-				loss = FSPLpathLoss(LR.frq_mhz, dkm, false);
-				break;
-			case 8:
-				// ITWOM 3.0
-				point_to_point(source.alt * METERS_PER_FOOT,
-					       destination.alt *
-					       METERS_PER_FOOT, LR.eps_dielect,
-					       LR.sgm_conductivity,
+			switch (prop_model) {
+			
+                case ITM_LR:
+                    // Longley Rice ITM
+                    point_to_point_ITM(source.alt * METERS_PER_FOOT,
+                            destination.alt *
+                            METERS_PER_FOOT,
+                            LR.eps_dielect,
+                            LR.sgm_conductivity,
+                            LR.eno_ns_surfref,
+                            LR.frq_mhz, LR.radio_climate,
+                            LR.pol, LR.conf, LR.rel,
+                            loss, strmode, errnum);
+                    break;
+                
+                case HATA:
+                    //HATA 1, 2 & 3
+                    loss =
+                        HATApathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
+                            (path.elevation[y] * METERS_PER_FOOT) +	 (destination.alt * METERS_PER_FOOT), dkm, pmenv);
+                    break;
+                
+                case ECC33:
+                    // ECC33
+                    loss =
+                        ECC33pathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
+                            (path.elevation[y] *
+                            METERS_PER_FOOT) +
+                            (destination.alt *
+                            METERS_PER_FOOT), dkm,
+                            pmenv);
+                    break;
+                
+                case SUI:
+                    // SUI
+                    loss =
+                        SUIpathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
+                            (path.elevation[y] *
+                            METERS_PER_FOOT) +
+                            (destination.alt *
+                            METERS_PER_FOOT), dkm, pmenv);
+                    break;
+                
+                case COST231_HATA:
+                    // COST231-Hata
+                    loss =
+                        COST231pathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
+                            (path.elevation[y] *
+                            METERS_PER_FOOT) +
+                                (destination.alt *
+                                METERS_PER_FOOT), dkm,
+                                pmenv);
+                    break;
+                
+                case ITU_R:
+                    // ITU-R P.525 Free space path loss
+                    loss = FSPLpathLoss(LR.frq_mhz, dkm, false);
+                    break;
+                
+                case ITWOM_3:
+                    // ITWOM 3.0
+                    point_to_point(source.alt * METERS_PER_FOOT,
+                            destination.alt *
+                            METERS_PER_FOOT, LR.eps_dielect,
+                            LR.sgm_conductivity,
 
-					       LR.eno_ns_surfref, LR.frq_mhz,
-					       LR.radio_climate, LR.pol,
-					       LR.conf, LR.rel, loss, strmode,
-					       errnum);
-				break;
-			case 9:
-				// Ericsson
-				loss =
-				    EricssonpathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
-						(path.elevation[y] *
-						 METERS_PER_FOOT) +
-						     (destination.alt *
-						      METERS_PER_FOOT), dkm,
-						     pmenv);
-				break;
-			case 10:
-				// Plane earth
-				loss =	PlaneEarthLoss(dkm, source.alt * METERS_PER_FOOT, (path.elevation[y] * METERS_PER_FOOT) + (destination.alt * METERS_PER_FOOT));
-				break;
-			case 11:
-				// Egli VHF/UHF
-				loss = EgliPathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT, (path.elevation[y] * METERS_PER_FOOT) + (destination.alt * METERS_PER_FOOT),dkm);
-				break;
-                        case 12:
-                                // Soil
-                                loss = SoilPathLoss(LR.frq_mhz, dkm, LR.eps_dielect);
-                                break;
+                            LR.eno_ns_surfref, LR.frq_mhz,
+                            LR.radio_climate, LR.pol,
+                            LR.conf, LR.rel, loss, strmode,
+                            errnum);
+                    break;
+                
+                case ERICSSON:
+                    // Ericsson
+                    loss =
+                        EricssonpathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT,
+                            (path.elevation[y] *
+                            METERS_PER_FOOT) +
+                                (destination.alt *
+                                METERS_PER_FOOT), dkm,
+                                pmenv);
+                    break;
+                
+                case PLANE_EARTH:
+                    // Plane earth
+                    loss =	PlaneEarthLoss(dkm, source.alt * METERS_PER_FOOT, (path.elevation[y] * METERS_PER_FOOT) + (destination.alt * METERS_PER_FOOT));
+                    break;
+                
+                case ELGI_V_U:
+                    // Egli VHF/UHF
+                    loss = EgliPathLoss(LR.frq_mhz, source.alt * METERS_PER_FOOT, (path.elevation[y] * METERS_PER_FOOT) + (destination.alt * METERS_PER_FOOT),dkm);
+                    break;
+                
+                case SOIL:
+                    // Soil
+                    loss = SoilPathLoss(LR.frq_mhz, dkm, LR.eps_dielect);
+                    break;
 
-
-			default:
-				point_to_point_ITM(source.alt * METERS_PER_FOOT,
-						   destination.alt *
-						   METERS_PER_FOOT,
-						   LR.eps_dielect,
-						   LR.sgm_conductivity,
-						   LR.eno_ns_surfref,
-						   LR.frq_mhz, LR.radio_climate,
-						   LR.pol, LR.conf, LR.rel,
-						   loss, strmode, errnum);
-
+                default:
+                    spdlog::warn("Defaulting to ITM propagation model");
+                    point_to_point_ITM(source.alt * METERS_PER_FOOT,
+                            destination.alt *
+                            METERS_PER_FOOT,
+                            LR.eps_dielect,
+                            LR.sgm_conductivity,
+                            LR.eno_ns_surfref,
+                            LR.frq_mhz, LR.radio_climate,
+                            LR.pol, LR.conf, LR.rel,
+                            loss, strmode, errnum);
 			}
 
-
-			if (knifeedge == 1 && propmodel > 1) {
+			if (knifeedge == 1 && prop_model > 1) {
 				diffloss =
 				    ked(LR.frq_mhz,
 					destination.alt * METERS_PER_FOOT, dkm);
@@ -746,7 +840,7 @@ void PlotPropPath(struct site source, struct site destination,
 }
 
 void PlotLOSMap(struct site source, double altitude, char *plo_filename,
-		bool use_threads)
+		bool use_threads, uint8_t segments)
 {
 	/* This function performs a 360 degree sweep around the
 	   transmitter site (source location), and plots the
@@ -776,38 +870,33 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 	double range_min_north[] = {max_north, min_north, min_north, min_north};
 	double range_max_west[] = {max_west, min_west, max_west, max_west};
 	double range_max_north[] = {max_north, max_north, min_north, max_north};
-	propagationRange* r[NUM_SECTIONS];
+	PropagationRange *r = new PropagationRange[segments];
 
-	for(int i = 0; i < NUM_SECTIONS; ++i) {
-		propagationRange *range = new propagationRange;
-		r[i] = range;
-		range->los = true;
+	for(int i = 0; i < segments; ++i) {
+        r[i].los = true;
 
-		range->eastwest = (range_min_west[i] == range_max_west[i] ? false : true);
-		range->min_west = range_min_west[i];
-		range->max_west = range_max_west[i];
-		range->min_north = range_min_north[i];
-		range->max_north = range_max_north[i];
+		r[i].eastwest = (range_min_west[i] == range_max_west[i] ? false : true);
+		r[i].min_west = range_min_west[i];
+		r[i].max_west = range_max_west[i];
+		r[i].min_north = range_min_north[i];
+		r[i].max_north = range_max_north[i];
 
-		range->use_threads = use_threads;
-		range->altitude = altitude;
-		range->source = source;
-		range->mask_value = mask_value;
-		range->fd = fd;
+		r[i].use_threads = use_threads;
+		r[i].altitude = altitude;
+		r[i].source = source;
+		r[i].mask_value = mask_value;
+		r[i].fd = fd;
 
 		if(use_threads)
-			beginThread(range);
+			beginRangeThread(&r[i]);
 		else
-			rangePropagation(range);
-
+			rangePropagation(&r[i]);
 	}
 
 	if(use_threads)
 		finishThreads();
 
-	for(int i = 0; i < NUM_SECTIONS; ++i){
-		delete r[i];
-	}
+	delete[] r;
 
 	switch (mask_value) {
 	case 1:
@@ -823,38 +912,49 @@ void PlotLOSMap(struct site source, double altitude, char *plo_filename,
 	}
 }
 
-
-void PlotPropagation(struct site source, double altitude, char *plo_filename,
-		     int propmodel, int knifeedge, int haf, int pmenv, bool
-		     use_threads)
+/// @brief Plot propagation from a source using a bounding box and the specified plot parameters
+/// @param source source site
+/// @param bounds bounding box
+/// @param altitude antenna altitude
+/// @param plo_filename plot filename
+/// @param prop_model propagation model to use
+/// @param knifeedge whether to use knife edge propagation
+/// @param haf 
+/// @param pmenv 
+/// @param use_threads whether to use threads or not
+/// @param segments number of segments to divide the plot by
+void PlotPropagation(struct site source, bbox bounds, 
+                    double altitude, char *plo_filename,
+		            PropModel prop_model, int knifeedge, int haf, int pmenv, bool
+		            use_threads, uint8_t segments)
 {
 	static __thread unsigned char mask_value = 1;
 	FILE *fd = NULL;
+
+    char plotType[32];
 	
 	if (LR.erp == 0.0 && debug)
-		fprintf(stderr, "path loss");
+		sprintf(plotType, "path loss");
 	else {
 		if (debug) {
 			if (dbm)
-				fprintf(stderr, "signal power level");
+				sprintf(plotType, "signal power level");
 			else
-				fprintf(stderr, "field strength");
+				sprintf(plotType, "field strength");
 		}
 	}
-	if (debug) {
-		fprintf(stderr,
-			" contours of \"%s\" out to a radius of %.2f %s with Rx antenna(s) at %.2f %s AGL\n",
+	spdlog::debug("Plotting {} contours of \"{}\" out to a radius of {:.2f} {} with Rx antenna(s) at {:.2f} {} AGL",
+            plotType,
 			source.name,
 			metric ? max_range * KM_PER_MILE : max_range,
 			metric ? "kilometers" : "miles",
 			metric ? altitude * METERS_PER_FOOT : altitude,
 			metric ? "meters" : "feet");
-	}
 
-	if (clutter > 0.0 && debug)
-		fprintf(stderr, "\nand %.2f %s of ground clutter",
-			metric ? clutter * METERS_PER_FOOT : clutter,
-			metric ? "meters" : "feet");
+	if (clutter > 0.0)
+        spdlog::debug("Using {:.2f} {} of ground clutter", metric ? clutter * METERS_PER_FOOT : clutter, metric ? "meters" : "feet");
+
+    spdlog::debug("TX site location: {:.6f}N {:.6f}W at {:.2f} ft AGL", source.lat, source.lon, source.alt);
 
 	if (plo_filename[0] != 0)
 		fd = fopen(plo_filename, "wb");
@@ -862,62 +962,293 @@ void PlotPropagation(struct site source, double altitude, char *plo_filename,
 	if (fd != NULL) {
 		fprintf(fd,
 			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
-			max_west, min_west, max_north, min_north);
+			bounds.upper_left.lon, bounds.lower_right.lon, bounds.upper_left.lat, bounds.lower_right.lat);
 	}
 
+    double plot_width = bounds.upper_left.lon - bounds.lower_right.lon;
+    double plot_height = bounds.upper_left.lat - bounds.lower_right.lat;
+
+    /**
+     * EXAMPLE - 6 segments
+     * 
+     * We divide our area into as follows:
+     * __|__1__|__2__|__
+     *   |           |
+     * 6 |           | 3
+     * __|___________|__
+     *   |  5  |  4  |
+     * 
+    */
+
+    // NUM_SECTIONS must always be a multiple of 2 and greater than 4, because we have to divide a 4-sided rectangle equally
+    uint8_t lon_edge_segments = (segments / 4);   // Our longitudal edges (top & bottom) will get the greater of the two segment counts
+    uint8_t lat_edge_segments = (segments / 2) - lon_edge_segments; // Our latitudal edges are whatever is left over
+
+    // Calculate the widths of each segment
+    double edge_width = plot_width / lon_edge_segments;
+    double edge_height = plot_height / lat_edge_segments;
+
+	spdlog::debug("With {} sections, our {:.6f} x {:.6f} area will be divided into {} x {} edge segments of size {:.6f} x {:.6f} deg", 
+        segments, plot_width, plot_height, lon_edge_segments, lat_edge_segments, edge_width, edge_height
+    );
 	
-	// Four sections start here
-	// Process north edge east/west, east edge north/south,
-	// south edge east/west, west edge north/south
-	double range_min_west[] = {min_west, min_west, min_west, max_west};
-	double range_min_north[] = {max_north, min_north, min_north, min_north};
-	double range_max_west[] = {max_west, min_west, max_west, max_west};
-	double range_max_north[] = {max_north, max_north, min_north, max_north};
-	propagationRange* r[NUM_SECTIONS];
+    // Array to hold our edge ranges
+    std::vector<PropagationRange> ranges;
 
-	for(int i = 0; i < NUM_SECTIONS; ++i) {
-		propagationRange *range = new propagationRange;
-		r[i] = range;
-		range->los = false;
+    // Create our longitudal (top and bottom edge) ranges
+    for (int i = 0; i < lon_edge_segments; i++) {
+        // Create two ranges for the top & bottom edges which will share longitude values
+        PropagationRange top_range;
+        PropagationRange bot_range;
+        // We're not doing an LOS plot
+        top_range.los = false;
+        bot_range.los = false;
+        // Calculate the longitudes for both ranges
+        double lon_min = bounds.lower_right.lon + (edge_width * i);
+        double lon_max = bounds.lower_right.lon + (edge_width * (1+i));
+        // Set top (on our max_north latitude)
+        top_range.min_west = lon_min;
+        top_range.max_west = lon_max;
+        top_range.min_north = bounds.upper_left.lat;
+        top_range.max_north = bounds.upper_left.lat;
+        // Set bottom (on our min_north latitude)
+        bot_range.min_west = lon_min;
+        bot_range.max_west = lon_max;
+        bot_range.min_north = bounds.lower_right.lat;
+        bot_range.max_north = bounds.lower_right.lat;
+        // Append to our vector
+        ranges.push_back(top_range);
+        ranges.push_back(bot_range);
+        // Log
+        spdlog::debug("Added top & bottom segments from {:.6f}W to {:.6f}W", lon_min, lon_max);
+    }
 
-		// Only process correct half
-		if((NUM_SECTIONS - i) <= (NUM_SECTIONS / 2) && haf == 1)
-			continue;
-		if((NUM_SECTIONS - i) > (NUM_SECTIONS / 2) && haf == 2)
-			continue;
+    // Create our latitudal (left and right) ranges
+    for (int i = 0; i < lat_edge_segments; i++) {
+        // Create two ranges for the left & right edges since they share latitude values
+        PropagationRange left_range;
+        PropagationRange right_range;
+        // We're not doing an LOS plot
+        left_range.los = false;
+        right_range.los = false;
+        // Calculate the latitude start & stop for both ranges
+        double lat_min = bounds.lower_right.lat + (edge_height * i);
+        double lat_max = bounds.lower_right.lat + (edge_height * (i+1));
+        // Set left (on our max_west longitude)
+        left_range.min_west = bounds.upper_left.lon;
+        left_range.max_west = bounds.upper_left.lon;
+        left_range.min_north = lat_min;
+        left_range.max_north = lat_max;
+        // Set right (on our min_west longitude)
+        right_range.min_west = bounds.lower_right.lon;
+        right_range.max_west = bounds.lower_right.lon;
+        right_range.min_north = lat_min;
+        right_range.max_north = lat_max;
+        // Append to our vector
+        ranges.push_back(left_range);
+        ranges.push_back(right_range);
+        // Log
+        spdlog::debug("Added left & right segments from {:.6f}N to {:.6f}N", lat_min, lat_max);
+    }
 
+    // Make sure we didn't do anythng wrong
+    if (ranges.size() != segments) {
+        spdlog::error("Our vector of ranges ({}) does not match expected segment count {}", ranges.size(), segments);
+        exit(1);
+    }
+    
+    // Init our vector for storing processing progress
+    if (!has_init_processed) {
+        init_processed();
+    }
 
-		range->eastwest = (range_min_west[i] == range_max_west[i] ? false : true);
-		range->min_west = range_min_west[i];
-		range->max_west = range_max_west[i];
-		range->min_north = range_min_north[i];
-		range->max_north = range_max_north[i];
-
-		range->use_threads = use_threads;
-		range->altitude = altitude;
-		range->source = source;
-		range->mask_value = mask_value;
-		range->fd = fd;
-		range->propmodel = propmodel;
-		range->knifeedge = knifeedge;
-		range->pmenv = pmenv;
-
-		if(use_threads)
-			beginThread(range);
-		else
-			rangePropagation(range);
-
-	}
+    // Iterate over the final list of ranges
+    for (size_t i = 0; i < ranges.size(); i++) {
+        // Set common variables
+        ranges[i].use_threads = use_threads;
+        ranges[i].altitude = altitude;
+        ranges[i].source = source;
+        ranges[i].mask_value = mask_value;
+        ranges[i].fd = fd;
+        ranges[i].prop_model = prop_model;
+        ranges[i].knifeedge = knifeedge;
+        ranges[i].pmenv = pmenv;
+        // Start a thread if we're using threads
+        if (use_threads) {
+            spdlog::debug("Starting calc thread for edge segment {:.6f}N {:.6f}W to {:.6f}N {:.6f}W", ranges[i].min_north, ranges[i].min_west, ranges[i].max_north, ranges[i].max_west);
+            beginRangeThread(&ranges[i]);
+        }
+        else {
+            spdlog::debug("Starting single-thread calc for edge segment {:.6f}N {:.6f}W to {:.6f}N {:.6f}W", ranges[i].min_north, ranges[i].min_west, ranges[i].max_north, ranges[i].max_west);
+            rangePropagation(&ranges[i]);
+        }
+    }
 
 	if(use_threads)
 		finishThreads();
 
-	for(int i = 0; i < NUM_SECTIONS; ++i){
-		delete r[i];
+	for(size_t i = 0; i < ranges.size(); i++){
+		ranges.erase(ranges.begin() + i);
 	}
 
        if (fd != NULL)
 		fclose(fd);
+
+	if (mask_value < 30)
+		mask_value++;
+}
+
+void PlotPropagationRadius(struct site source, double range, 
+                            double altitude, char *plot_filename, 
+                            PropModel prop_model, int knifeedge, int haf, int pmenv, 
+                            bool use_threads, uint8_t segments)
+{
+
+    // Convert our imperial units to metric if needed
+    if (metric)
+    {
+        range *= KM_PER_MILE;
+        altitude *= METERS_PER_FOOT;
+    }
+
+    // Ensure segments is a logical value
+    if ((segments % 2 != 0) && (segments % 3 != 0))
+    {
+        spdlog::error("Segment number must be an multiple of either 2 or 3!");
+        exit(1);
+    }
+
+    static __thread unsigned char mask_value = 1;
+	FILE *fd = NULL;
+
+    // Get plot type string
+    char plotType[32];
+	if (LR.erp == 0.0 && debug)
+		sprintf(plotType, "path loss");
+	else {
+		if (debug) {
+			if (dbm)
+				sprintf(plotType, "signal power level");
+			else
+				sprintf(plotType, "field strength");
+		}
+	}
+    // Print debug
+	spdlog::debug("Plotting {} contours of \"{}\" out to a radius of {:.2f} km with Rx antenna(s) at {:.2f} m AGL",
+            plotType,
+			source.name,
+			range,
+			altitude
+    );
+
+    // Optional clutter debug print
+	if (clutter > 0.0)
+        spdlog::debug("Using {:.2f} {} of ground clutter", metric ? clutter * METERS_PER_FOOT : clutter, metric ? "meters" : "feet");
+
+    // TX site location print
+    spdlog::debug("TX site location: {:.6f}N {:.6f}W at {:.2f} ft AGL", source.lat, source.lon, source.alt);
+
+    // Get bounding box of plot
+    bbox bounds = getCircularBoundingBox( {source.lat, source.lon}, range);
+
+    // Open file and ensure it opened
+	if (plot_filename[0] != 0)
+		fd = fopen(plot_filename, "wb");
+	if (fd != NULL) {
+		fprintf(fd,
+			"%.3f, %.3f\t; max_west, min_west\n%.3f, %.3f\t; max_north, min_north\n",
+			bounds.upper_left.lon, bounds.lower_right.lon, bounds.upper_left.lat, bounds.lower_right.lat);
+	}
+
+    // Calculate plot width & height in degrees
+    double plot_width = bounds.upper_left.lon - bounds.lower_right.lon;
+    double plot_height = bounds.upper_left.lat - bounds.lower_right.lat;
+
+    // Calculate the radius of our circle, in pixels
+    double radius_px = (plot_width / 2.0) * ppd;
+
+    // Calculate the total number of pixels/points in our plot circle using the midpoint circle algorithm
+    // Borrowed from https://math.stackexchange.com/a/167310
+    // We use the upper bound to ensure we don't miss any points
+    int circle_pixels = (int)ceil(radius_px * 6.283);
+
+    // Calculte the size of each angular degree section, in rads
+    double section_size_rad = 360.0 / segments * DEG2RAD;
+
+    // Calculate the number of points/pixels in each segment
+    int section_pixels = (int)(circle_pixels / segments);
+
+    // Create our ranges
+    std::vector<PropagationRadius> radii;
+
+    // Iterate through our segments
+    for (int i = 0; i < segments; i++)
+    {
+        // Create a new radius
+        PropagationRadius propRadius;
+        // Populate static data
+        propRadius.source = source;
+        propRadius.radius = range;
+        propRadius.points = section_pixels;
+        propRadius.use_threads = use_threads;
+        propRadius.altitude = altitude;
+        propRadius.mask_value = mask_value;
+        propRadius.fd = fd;
+        propRadius.prop_model = prop_model;
+        propRadius.knifeedge = knifeedge;
+        propRadius.pmenv = pmenv;
+        // We're not doing LOS
+        propRadius.los = false;
+        // Calculate start and stop angles
+        propRadius.start_angle_rad = i * section_size_rad;
+        propRadius.stop_angle_rad = (i + 1) * section_size_rad;
+
+        // Add to list
+        radii.push_back(propRadius);
+    }
+
+	spdlog::debug("With {} segments and {} total points, our circular area will be divided into {:.2f}-degree (or {} point) segments", 
+                    segments, circle_pixels, section_size_rad / DEG2RAD, section_pixels);
+
+    // Make sure we didn't do anythng wrong
+    if (radii.size() != segments) {
+        spdlog::error("Our vector of radii ({}) does not match expected segment count {}", radii.size(), segments);
+        exit(1);
+    }
+
+    // Init our vector for storing processing progress
+    if (!has_init_processed) {
+        init_processed();
+    }
+
+    // Iterate over the final list of ranges
+    for (size_t i = 0; i < radii.size(); i++) {
+        // Start a thread if we're using threads
+        if (use_threads) {
+            spdlog::debug("Starting calc thread for radius segment {:.2f} to {:.2f}", radii[i].start_angle_rad / DEG2RAD, radii[i].stop_angle_rad / DEG2RAD);
+            beginRadiusThread(&radii[i]);
+        }
+        else {
+            spdlog::debug("Starting single-thread calc for radius segment {:.2f} to {:.2f}", radii[i].start_angle_rad / DEG2RAD, radii[i].stop_angle_rad / DEG2RAD);
+            radiusPropagation(&radii[i]);
+        }
+    }
+
+    // Wait for threads to finish
+	if(use_threads)
+    {
+        spdlog::debug("Waiting for threads to finish...");
+        finishThreads();
+    }
+
+    // Clean up our radii
+	for(size_t i = 0; i < radii.size(); i++){
+		radii.erase(radii.begin() + i);
+	}
+
+    // Close the file
+    if (fd != NULL)
+        fclose(fd);
 
 	if (mask_value < 30)
 		mask_value++;
